@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Red Santa hat with white trim and pom -->
+  <path d="M 50 28 L 90 -25 L 130 28 L 120 32 L 60 32 Z" fill="#C41E3A"/>
+  <path d="M 50 28 L 130 28" stroke="#FFF" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="90" cy="-22" r="8" fill="#FFF"/>
+  <circle cx="90" cy="-22" r="4" fill="#F0F0F0"/>
+</svg>

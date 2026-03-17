@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Small angel wings on sides, y~100 -->
+  <defs>
+    <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fff8e1"/>
+      <stop offset="100%" style="stop-color:#ffffff"/>
+    </linearGradient>
+  </defs>
+  <path d="M 35 95 Q 5 85 15 105 Q 25 95 35 100 Q 30 110 35 115" fill="url(#wingGrad)" stroke="#e0e0e0" stroke-width="0.5"/>
+  <path d="M 145 95 Q 175 85 165 105 Q 155 95 145 100 Q 150 110 145 115" fill="url(#wingGrad)" stroke="#e0e0e0" stroke-width="0.5"/>
+</svg>

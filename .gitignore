@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+server/dist/
+web/dist/
+clients/windows/dist/
+clients/windows/release/
+clients/linux/dist/
+
+# Environment & secrets
+.env
+*.db
+*.db-wal
+*.db-shm
+
+# IDE / AI tools
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional native module builds
+build/
+prebuilds/

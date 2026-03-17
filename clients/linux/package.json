@@ -1,0 +1,22 @@
+{
+  "name": "heartbeat-linux-client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev":   "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "uiohook-napi": "^1.5.4",
+    "dotenv":       "^16.4.5"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk":  "^0.20.0",
+    "screenshot-desktop": "^1.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "tsx":         "^4.7.0",
+    "typescript":  "^5.3.3"
+  }
+}

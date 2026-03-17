@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Business necktie around neck, y~110-130 -->
+  <path d="M 90 105 L 75 130 L 85 130 L 90 122 L 95 130 L 105 130 Z" fill="#1a237e"/>
+  <path d="M 90 105 L 75 130 L 85 130 L 90 122 L 95 130 L 105 130 Z" fill="none" stroke="#0d47a1" stroke-width="0.5"/>
+  <polygon points="85,108 95,108 90,115" fill="#283593"/>
+</svg>

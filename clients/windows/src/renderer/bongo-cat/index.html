@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+<title>Bongo Cat</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: transparent; overflow: hidden; user-select: none; }
+body { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100vh; padding-bottom: 8px; }
+
+.cats-row {
+  display: flex; align-items: flex-end; gap: 0;
+  -webkit-app-region: drag; cursor: grab;
+}
+.cats-row:active { cursor: grabbing; }
+
+.cat-wrapper { position: relative; }
+
+.cat-svg { transition: transform 0.08s ease-out; }
+.cat-svg.bounce { transform: translateY(3px); }
+
+.paw-left, .paw-right { transition: transform 0.07s ease-out; transform-origin: center bottom; }
+.paw-left.tap  { transform: translateY(8px) scaleY(0.6) rotate(-5deg); }
+.paw-right.tap { transform: translateY(8px) scaleY(0.6) rotate(5deg); }
+
+.ear-left, .ear-right { transition: transform 0.1s ease-out; transform-origin: 50% 100%; }
+.ear-left.wiggle  { transform: rotate(-18deg) translateY(-3px); }
+.ear-right.wiggle { transform: rotate(18deg) translateY(-3px); }
+
+.eye { transition: ry 0.1s ease-out; }
+.eye.squint { ry: 2; }
+
+/* Bottom bar */
+.bottom-bar {
+  display: flex; align-items: center; gap: 8px; margin-top: 4px;
+  font-family: 'Segoe UI', sans-serif; font-size: 11px;
+  color: rgba(255,255,255,0.8);
+  -webkit-app-region: no-drag;
+  cursor: default;
+  width: 220px;
+}
+.counters { display: flex; gap: 10px; flex-shrink: 0; }
+.counter { display: flex; align-items: center; gap: 3px; }
+.counter-icon { font-size: 12px; }
+.counter-num { font-variant-numeric: tabular-nums; min-width: 20px; font-weight: 600; font-size: 11px; }
+
+.energy-wrap { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.energy-bar-bg { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.15); overflow: hidden; }
+.energy-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4fc3f7, #7c4dff); transition: width 0.4s ease; width: 0%; }
+.energy-label { font-size: 9px; color: rgba(255,255,255,0.5); text-align: right; }
+
+.box-btn {
+  flex-shrink: 0; width: 24px; height: 24px; border: none; background: none;
+  cursor: pointer; font-size: 18px; filter: grayscale(1) opacity(0.3);
+  transition: all 0.3s; padding: 0;
+  -webkit-app-region: no-drag;
+}
+.box-btn.ready { filter: none; animation: boxPulse 1s infinite; }
+@keyframes boxPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+/* Friend cat mini */
+.friend-cat-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  margin: 0 -8px;
+}
+.friend-cat-name {
+  font-family: 'Segoe UI', sans-serif; font-size: 9px;
+  color: rgba(255,255,255,0.7); text-align: center;
+  white-space: nowrap; max-width: 90px; overflow: hidden;
+  text-overflow: ellipsis; margin-bottom: 1px;
+  -webkit-app-region: no-drag;
+}
+.friend-cat-svg { transition: transform 0.08s ease-out; }
+.friend-cat-svg.bounce { transform: translateY(2px); }
+</style>
+</head>
+<body>
+
+<div class="cats-row" id="catsRow">
+  <!-- Friend cats will be inserted here dynamically -->
+  <div class="cat-wrapper" id="catWrapper">
+    <svg class="cat-svg" id="catSvg" width="220" height="190" viewBox="-20 -10 220 170">
+      <g class="ear-left" id="earL">
+        <polygon points="42,52 26,6 62,36" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+        <polygon points="45,46 33,18 56,38" fill="#ffb5b5"/>
+      </g>
+      <g class="ear-right" id="earR">
+        <polygon points="138,52 154,6 118,36" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+        <polygon points="135,46 147,18 124,38" fill="#ffb5b5"/>
+      </g>
+      <ellipse cx="90" cy="74" rx="58" ry="50" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+      <ellipse class="eye" id="eyeL" cx="70" cy="68" rx="5.5" ry="7" fill="#333"/>
+      <ellipse class="eye" id="eyeR" cx="110" cy="68" rx="5.5" ry="7" fill="#333"/>
+      <circle cx="72" cy="65" r="2.2" fill="#fff"/>
+      <circle cx="112" cy="65" r="2.2" fill="#fff"/>
+      <polygon points="90,78 86,83 94,83" fill="#ffb5b5"/>
+      <path d="M80,86 Q90,94 100,86" fill="none" stroke="#ccc" stroke-width="1.4" stroke-linecap="round"/>
+      <ellipse cx="52" cy="82" rx="10" ry="6" fill="#ffdddd" opacity="0.5"/>
+      <ellipse cx="128" cy="82" rx="10" ry="6" fill="#ffdddd" opacity="0.5"/>
+      <line x1="52" y1="76" x2="22" y2="72" stroke="#ddd" stroke-width="0.9"/>
+      <line x1="52" y1="80" x2="20" y2="82" stroke="#ddd" stroke-width="0.9"/>
+      <line x1="52" y1="84" x2="24" y2="92" stroke="#ddd" stroke-width="0.9"/>
+      <line x1="128" y1="76" x2="158" y2="72" stroke="#ddd" stroke-width="0.9"/>
+      <line x1="128" y1="80" x2="160" y2="82" stroke="#ddd" stroke-width="0.9"/>
+      <line x1="128" y1="84" x2="156" y2="92" stroke="#ddd" stroke-width="0.9"/>
+      <g id="equipLayer"></g>
+      <rect x="10" y="122" width="160" height="26" rx="5" fill="#e8e8e8" stroke="#ddd" stroke-width="1"/>
+      <g class="paw-left" id="pawL" transform="translate(48,118)">
+        <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+        <circle cx="-7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
+        <circle cx="0" cy="-5" r="3" fill="#ffcccc" opacity="0.5"/>
+        <circle cx="7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
+        <ellipse cx="0" cy="3" rx="6" ry="4" fill="#ffcccc" opacity="0.4"/>
+      </g>
+      <g class="paw-right" id="pawR" transform="translate(132,118)">
+        <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+        <circle cx="-7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
+        <circle cx="0" cy="-5" r="3" fill="#ffcccc" opacity="0.5"/>
+        <circle cx="7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
+        <ellipse cx="0" cy="3" rx="6" ry="4" fill="#ffcccc" opacity="0.4"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <div class="counters">
+    <div class="counter"><span class="counter-icon">⌨</span><span class="counter-num" id="kbCount">0</span></div>
+    <div class="counter"><span class="counter-icon">🖱</span><span class="counter-num" id="msCount">0</span></div>
+  </div>
+  <div class="energy-wrap">
+    <div class="energy-bar-bg"><div class="energy-bar-fill" id="energyFill"></div></div>
+    <div class="energy-label" id="energyLabel">0 / 1000</div>
+  </div>
+  <button class="box-btn" id="boxBtn" title="开宝箱">🎁</button>
+</div>
+
+<script>
+const api = window.heartbeatAPI
+let kbTotal = 0, msTotal = 0, nextPaw = 'left'
+
+const catSvg  = document.getElementById('catSvg')
+const pawL    = document.getElementById('pawL')
+const pawR    = document.getElementById('pawR')
+const earL    = document.getElementById('earL')
+const earR    = document.getElementById('earR')
+const eyeL    = document.getElementById('eyeL')
+const eyeR    = document.getElementById('eyeR')
+const kbEl    = document.getElementById('kbCount')
+const msEl    = document.getElementById('msCount')
+const wrapper = document.getElementById('catWrapper')
+const catsRow = document.getElementById('catsRow')
+const energyFill  = document.getElementById('energyFill')
+const energyLabel = document.getElementById('energyLabel')
+const boxBtn      = document.getElementById('boxBtn')
+
+/* Window is always interactive — drag via -webkit-app-region: drag on .cats-row */
+
+function tapPaw(side) {
+  const paw = side === 'left' ? pawL : pawR
+  paw.classList.add('tap')
+  catSvg.classList.add('bounce')
+  setTimeout(() => { paw.classList.remove('tap'); catSvg.classList.remove('bounce') }, 120)
+}
+
+function mouseReact() {
+  earL.classList.add('wiggle'); earR.classList.add('wiggle')
+  eyeL.classList.add('squint'); eyeR.classList.add('squint')
+  setTimeout(() => {
+    earL.classList.remove('wiggle'); earR.classList.remove('wiggle')
+    eyeL.classList.remove('squint'); eyeR.classList.remove('squint')
+  }, 160)
+}
+
+function fmt(n) {
+  if (n >= 100000) return (n / 1000).toFixed(0) + 'k'
+  if (n >= 10000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
+
+api.onInputEvent((data) => {
+  if (data.type === 'keyboard') {
+    kbTotal++; kbEl.textContent = fmt(kbTotal)
+    tapPaw(nextPaw); nextPaw = nextPaw === 'left' ? 'right' : 'left'
+  } else {
+    msTotal++; msEl.textContent = fmt(msTotal)
+    mouseReact()
+  }
+})
+
+/* ── Energy ── */
+let boxesAvailable = 0
+api.onEnergyUpdate((data) => {
+  const pct = Math.min(100, (data.progress / data.energy_per_box) * 100)
+  energyFill.style.width = pct + '%'
+  energyLabel.textContent = data.progress + ' / ' + data.energy_per_box
+  boxesAvailable = data.available_boxes
+  if (boxesAvailable > 0) { boxBtn.classList.add('ready'); boxBtn.title = `开宝箱 (${boxesAvailable})` }
+  else { boxBtn.classList.remove('ready'); boxBtn.title = '能量不足' }
+})
+
+boxBtn.addEventListener('click', async (e) => {
+  e.stopPropagation()
+  if (boxesAvailable <= 0) return
+  try {
+    const result = await api.bongoOpenBox()
+    if (result && result.ok) showBoxResult(result.item)
+  } catch {}
+})
+
+/* ── Equipment ── */
+const equipLayer = document.getElementById('equipLayer')
+const headEl = document.querySelector('ellipse[cx="90"][cy="74"]')
+
+async function loadEquipment() {
+  try {
+    const profile = await api.bongoGetProfile()
+    if (profile && profile.equipped) renderEquipment(profile.equipped)
+  } catch {}
+}
+
+async function renderEquipment(equipped) {
+  equipLayer.innerHTML = ''
+  for (const item of equipped) {
+    if (item.slot === 'color' && item.svg_ref) {
+      try {
+        const svgText = await api.bongoGetItemSvg(item.svg_ref)
+        if (svgText) {
+          const match = svgText.match(/data-color="([^"]+)"/)
+          if (match && headEl) {
+            const color = match[1]
+            headEl.setAttribute('fill', color)
+            document.querySelectorAll('.ear-left polygon:first-child, .ear-right polygon:first-child').forEach(p => p.setAttribute('fill', color))
+            document.querySelectorAll('.paw-left ellipse:first-child, .paw-right ellipse:first-child').forEach(p => p.setAttribute('fill', color))
+          }
+        }
+      } catch {}
+      continue
+    }
+    if (!item.svg_ref) continue
+    try {
+      const svgText = await api.bongoGetItemSvg(item.svg_ref)
+      if (!svgText) continue
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(svgText, 'image/svg+xml')
+      const svgRoot = doc.documentElement
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      g.setAttribute('class', 'equip-item equip-' + item.slot)
+      while (svgRoot.firstChild) g.appendChild(svgRoot.firstChild)
+      equipLayer.appendChild(g)
+    } catch {}
+  }
+}
+api.onEquipUpdate((equipped) => renderEquipment(equipped))
+loadEquipment()
+
+/* ── Box result popup ── */
+function esc(s) {
+  const d = document.createElement('span')
+  d.textContent = s
+  return d.innerHTML
+}
+
+function showBoxResult(item) {
+  const rarityColors = { common: '#aaa', rare: '#4fc3f7', epic: '#ce93d8', legendary: '#ffd54f' }
+  const overlay = document.createElement('div')
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;-webkit-app-region:no-drag;`
+  const color = rarityColors[item.rarity] || '#fff'
+  overlay.innerHTML = `<div style="font-size:36px;margin-bottom:8px;animation:boxDrop 0.4s ease-out">🎁</div><div style="color:${color};font-size:16px;font-weight:700;font-family:'Segoe UI',sans-serif">${esc(item.name)}</div><div style="color:${color};font-size:11px;opacity:0.8;margin-top:2px;font-family:'Segoe UI',sans-serif">${esc(item.rarity).toUpperCase()}</div>`
+  const style = document.createElement('style')
+  style.textContent = `@keyframes boxDrop{from{transform:translateY(-30px) scale(0.5);opacity:0}to{transform:none;opacity:1}}`
+  overlay.appendChild(style)
+  overlay.addEventListener('click', () => overlay.remove())
+  document.body.appendChild(overlay)
+  setTimeout(() => overlay.remove(), 3000)
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FRIEND CATS — Real-time multi-cat rendering via WebSocket
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const MAX_FRIEND_CATS = 3
+const friendCats = new Map() // friend_id -> { el, pawSide }
+
+function createFriendCatSvg(friendId, displayName) {
+  const wrap = document.createElement('div')
+  wrap.className = 'friend-cat-wrap'
+  wrap.dataset.friendId = friendId
+
+  const nameEl = document.createElement('div')
+  nameEl.className = 'friend-cat-name'
+  nameEl.textContent = displayName
+  wrap.appendChild(nameEl)
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'friend-cat-svg')
+  svg.setAttribute('width', '100')
+  svg.setAttribute('height', '90')
+  svg.setAttribute('viewBox', '-20 -5 220 165')
+
+  svg.innerHTML = `
+    <g class="ear-left" data-el="earL">
+      <polygon points="42,52 26,6 62,36" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+      <polygon points="45,46 33,18 56,38" fill="#ffb5b5"/>
+    </g>
+    <g class="ear-right" data-el="earR">
+      <polygon points="138,52 154,6 118,36" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+      <polygon points="135,46 147,18 124,38" fill="#ffb5b5"/>
+    </g>
+    <ellipse cx="90" cy="74" rx="58" ry="50" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
+    <ellipse class="eye" data-el="eyeL" cx="70" cy="68" rx="5.5" ry="7" fill="#333"/>
+    <ellipse class="eye" data-el="eyeR" cx="110" cy="68" rx="5.5" ry="7" fill="#333"/>
+    <circle cx="72" cy="65" r="2.2" fill="#fff"/>
+    <circle cx="112" cy="65" r="2.2" fill="#fff"/>
+    <polygon points="90,78 86,83 94,83" fill="#ffb5b5"/>
+    <path d="M80,86 Q90,94 100,86" fill="none" stroke="#ccc" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="52" cy="82" rx="10" ry="6" fill="#ffdddd" opacity="0.5"/>
+    <ellipse cx="128" cy="82" rx="10" ry="6" fill="#ffdddd" opacity="0.5"/>
+    <rect x="10" y="122" width="160" height="26" rx="5" fill="#e8e8e8" stroke="#ddd" stroke-width="1"/>
+    <g class="paw-left" data-el="pawL" transform="translate(48,118)">
+      <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+    </g>
+    <g class="paw-right" data-el="pawR" transform="translate(132,118)">
+      <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+    </g>
+  `
+  wrap.appendChild(svg)
+  return wrap
+}
+
+function addFriendCat(friendId, displayName) {
+  if (friendCats.has(friendId) || friendCats.size >= MAX_FRIEND_CATS) return
+  const el = createFriendCatSvg(friendId, displayName)
+  catsRow.appendChild(el)
+  friendCats.set(friendId, { el, pawSide: 'left' })
+}
+
+function removeFriendCat(friendId) {
+  const cat = friendCats.get(friendId)
+  if (cat) { cat.el.remove(); friendCats.delete(friendId) }
+}
+
+function animateFriendCat(friendId, inputType) {
+  const cat = friendCats.get(friendId)
+  if (!cat) return
+  const svg = cat.el.querySelector('.friend-cat-svg')
+  if (!svg) return
+
+  if (inputType === 'keyboard') {
+    const side = cat.pawSide
+    cat.pawSide = side === 'left' ? 'right' : 'left'
+    const paw = svg.querySelector(`[data-el="paw${side === 'left' ? 'L' : 'R'}"]`)
+    if (paw) { paw.classList.add('tap'); setTimeout(() => paw.classList.remove('tap'), 120) }
+    svg.classList.add('bounce')
+    setTimeout(() => svg.classList.remove('bounce'), 120)
+  } else {
+    const earL = svg.querySelector('[data-el="earL"]')
+    const earR = svg.querySelector('[data-el="earR"]')
+    if (earL) { earL.classList.add('wiggle'); setTimeout(() => earL.classList.remove('wiggle'), 160) }
+    if (earR) { earR.classList.add('wiggle'); setTimeout(() => earR.classList.remove('wiggle'), 160) }
+  }
+}
+
+/* ── WebSocket message handler ── */
+api.onWsMessage((msg) => {
+  switch (msg.type) {
+    case 'friends_online':
+      (msg.friends || []).forEach(f => addFriendCat(f.id, f.display_name))
+      break
+    case 'friend_online':
+      addFriendCat(msg.friend_id, msg.display_name)
+      break
+    case 'friend_offline':
+      removeFriendCat(msg.friend_id)
+      break
+    case 'friend_input':
+      animateFriendCat(msg.friend_id, msg.input_type)
+      break
+    case 'friend_equip':
+      // could reload friend's equipment SVGs here in the future
+      break
+  }
+})
+</script>
+</body>
+</html>

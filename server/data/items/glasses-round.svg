@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Round circular glasses (thin wire frames) -->
+  <g fill="none" stroke="#2c2c2c" stroke-width="2">
+    <!-- Left lens -->
+    <circle cx="70" cy="68" r="14"/>
+    <!-- Right lens -->
+    <circle cx="110" cy="68" r="14"/>
+    <!-- Bridge -->
+    <path d="M 84 68 L 96 68"/>
+    <!-- Left arm -->
+    <path d="M 56 68 L 48 68"/>
+    <!-- Right arm -->
+    <path d="M 124 68 L 132 68"/>
+  </g>
+</svg>

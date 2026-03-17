@@ -1,0 +1,134 @@
+{
+  "_about": "iOS 捷径客户端配置规范 — My Heartbeat",
+  "_ios_requirement": "iOS 16.4+（关闭提示需要 iOS 17+）",
+
+  "configuration": {
+    "_instructions": "将下面三个字段填入 Master Shortcut 的对应位置",
+    "server_url":  "https://YOUR-VPS-IP:3000",
+    "api_key":     "YOUR-API-KEY",
+    "device_id":   "iphone",
+    "device_name": "iPhone"
+  },
+
+  "session_model": {
+    "_note": "iOS 与 PC 客户端的工作模式不同",
+    "pc_clients":  "每 10 秒发送一次心跳，服务端 30 秒超时自动关闭 session",
+    "ios_client":  "打开 App 时发 open，关闭 App 时发 close，服务端 session 超时为 3 小时"
+  },
+
+  "master_shortcut": {
+    "_purpose": "所有自动化共用这一个 Shortcut，只需配置一次 URL 和 API Key",
+    "name": "Heartbeat",
+    "steps": [
+      {
+        "step": 1,
+        "action": "接受输入",
+        "type": "文本",
+        "if_no_input": "继续",
+        "_note": "输入格式为 'AppName|open' 或 'AppName|close'"
+      },
+      {
+        "step": 2,
+        "action": "分割文本",
+        "text": "「快捷指令输入」",
+        "separator": "|",
+        "output_name": "分割文本"
+      },
+      {
+        "step": 3,
+        "action": "从列表中获取",
+        "list": "分割文本",
+        "index": "第一项",
+        "output_name": "app_name"
+      },
+      {
+        "step": 4,
+        "action": "从列表中获取",
+        "list": "分割文本",
+        "index": "最后一项",
+        "output_name": "event"
+      },
+      {
+        "step": 5,
+        "action": "获取 URL 的内容",
+        "url": "https://YOUR-VPS-IP:3000/api/heartbeat",
+        "method": "POST",
+        "headers": [
+          { "key": "Content-Type",  "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer YOUR-API-KEY" }
+        ],
+        "request_body": "JSON",
+        "json_values": [
+          { "key": "device_id",   "type": "文本",   "value": "iphone" },
+          { "key": "device_name", "type": "文本",   "value": "iPhone" },
+          { "key": "device_type", "type": "文本",   "value": "ios" },
+          { "key": "app_name",    "type": "变量",   "value": "app_name（第 3 步输出）" },
+          { "key": "event",       "type": "变量",   "value": "event（第 4 步输出）" }
+        ],
+        "_note": "此步骤不要勾选「显示结果」"
+      }
+    ]
+  },
+
+  "per_app_automation": {
+    "_purpose": "每个 App 创建两条自动化，调用上面的 Master Shortcut",
+    "_tip": "创建好第一个 App 的两条自动化后，可以长按复制，只需改 App 名称",
+
+    "open_automation": {
+      "trigger_path": "快捷指令 → 自动化 → 个人自动化 → App → 选择 App → 打开时",
+      "ask_before_running": false,
+      "_ios17_note": "iOS 17+ 可关闭「运行前询问」实现静默执行",
+      "steps": [
+        {
+          "step": 1,
+          "action": "文本",
+          "value": "替换为实际 App 名称|open",
+          "_example": "微信|open"
+        },
+        {
+          "step": 2,
+          "action": "运行快捷指令",
+          "shortcut": "Heartbeat",
+          "input": "第 1 步中的文本"
+        }
+      ]
+    },
+
+    "close_automation": {
+      "trigger_path": "快捷指令 → 自动化 → 个人自动化 → App → 选择 App → 关闭时",
+      "ios_requirement": "iOS 16.4+",
+      "ask_before_running": false,
+      "steps": [
+        {
+          "step": 1,
+          "action": "文本",
+          "value": "替换为实际 App 名称|close",
+          "_example": "微信|close"
+        },
+        {
+          "step": 2,
+          "action": "运行快捷指令",
+          "shortcut": "Heartbeat",
+          "input": "第 1 步中的文本"
+        }
+      ]
+    }
+  },
+
+  "tips": [
+    "App 名称必须和「打开时」触发器里显示的名称完全一致，建议直接复制粘贴",
+    "iOS 17+ 在「运行前询问」关闭后完全静默，无任何通知或弹窗",
+    "iOS 16 需要在通知栏点击「运行」才会真正执行，略有延迟",
+    "关闭自动化（close_automation）需要 iOS 16.4+ 才有「关闭时」选项",
+    "如果没有 close 自动化，session 会在服务端 3 小时后自动超时关闭",
+    "建议先只追踪你最常用的 5-10 个 App，确认正常后再扩展",
+    "自动化列表过长时，可以用「文件夹」功能分组管理"
+  ],
+
+  "troubleshooting": {
+    "shortcut_not_running": "检查「快捷指令」→「自动化」→ 对应自动化是否已启用",
+    "network_error": "确认手机和 VPS 网络连通，可在 Safari 访问 https://YOUR-VPS-IP:3000/health 测试",
+    "401_unauthorized": "检查 API_KEY 是否与服务端 .env 一致，注意 Bearer 前缀和空格",
+    "app_name_mismatch": "在自动化触发器里选好 App 后，直接复制触发器里显示的名称填入文本步骤"
+  }
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Bell on collar around neck -->
+  <ellipse cx="90" cy="115" rx="38" ry="6" fill="none" stroke="#9e9e9e" stroke-width="3"/>
+  <circle cx="90" cy="125" r="8" fill="#ffc107"/>
+  <path d="M 86 125 Q 90 132 94 125" fill="none" stroke="#ff8f00" stroke-width="1"/>
+  <ellipse cx="90" cy="120" rx="6" ry="4" fill="#ffa000"/>
+  <circle cx="90" cy="128" r="2" fill="#795548"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- French beret -->
+  <ellipse cx="90" cy="18" rx="52" ry="20" fill="#8B0000"/>
+  <ellipse cx="90" cy="16" rx="48" ry="14" fill="#A52A2A"/>
+  <ellipse cx="90" cy="20" rx="45" ry="8" fill="#8B0000"/>
+  <circle cx="90" cy="12" r="6" fill="#8B0000"/>
+</svg>

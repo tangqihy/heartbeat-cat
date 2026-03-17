@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Baseball / dev cap -->
+  <path d="M 45 28 Q 45 20 90 20 Q 135 20 135 28 L 135 32 L 45 32 Z" fill="#1a1a2e"/>
+  <path d="M 40 32 L 140 32 L 138 38 Q 90 42 42 38 Z" fill="#16213e"/>
+  <path d="M 55 32 L 125 32 L 123 36 Q 90 39 57 36 Z" fill="#1a1a2e"/>
+  <text x="90" y="52" font-family="monospace" font-size="8" fill="#0f0" text-anchor="middle">&lt;/&gt;</text>
+</svg>

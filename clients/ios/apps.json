@@ -1,0 +1,78 @@
+{
+  "_about": "常用 iOS App 列表 — 填入 shortcut.json 的自动化配置中",
+  "_note": "App 名称取自 iOS 系统显示名（即 App 图标下方的名称），如有出入以实际为准",
+
+  "social": [
+    { "name": "微信",     "en": "WeChat",     "category": "即时通讯" },
+    { "name": "QQ",       "en": "QQ",         "category": "即时通讯" },
+    { "name": "钉钉",     "en": "DingTalk",   "category": "即时通讯" },
+    { "name": "飞书",     "en": "Feishu",     "category": "即时通讯" },
+    { "name": "Telegram", "en": "Telegram",   "category": "即时通讯" },
+    { "name": "微博",     "en": "Weibo",      "category": "社交媒体" },
+    { "name": "小红书",   "en": "RED",        "category": "社交媒体" },
+    { "name": "Twitter",  "en": "Twitter",    "category": "社交媒体" },
+    { "name": "Instagram","en": "Instagram",  "category": "社交媒体" }
+  ],
+
+  "entertainment": [
+    { "name": "抖音",      "en": "Douyin",      "category": "短视频" },
+    { "name": "哔哩哔哩",  "en": "Bilibili",    "category": "视频" },
+    { "name": "YouTube",   "en": "YouTube",     "category": "视频" },
+    { "name": "爱奇艺",    "en": "iQIYI",       "category": "视频" },
+    { "name": "优酷",      "en": "Youku",       "category": "视频" },
+    { "name": "腾讯视频",  "en": "WeTV",        "category": "视频" },
+    { "name": "Netflix",   "en": "Netflix",     "category": "视频" },
+    { "name": "网易云音乐","en": "NetEase Music","category": "音乐" },
+    { "name": "QQ音乐",    "en": "QQ Music",    "category": "音乐" },
+    { "name": "Spotify",   "en": "Spotify",     "category": "音乐" },
+    { "name": "Apple Music","en": "Apple Music","category": "音乐" },
+    { "name": "Steam",     "en": "Steam",       "category": "游戏" },
+    { "name": "原神",      "en": "Genshin Impact","category": "游戏" }
+  ],
+
+  "productivity": [
+    { "name": "Safari",     "en": "Safari",       "category": "浏览器" },
+    { "name": "Chrome",     "en": "Chrome",       "category": "浏览器" },
+    { "name": "邮件",       "en": "Mail",         "category": "邮件" },
+    { "name": "Outlook",    "en": "Outlook",      "category": "邮件" },
+    { "name": "备忘录",     "en": "Notes",        "category": "笔记" },
+    { "name": "Notion",     "en": "Notion",       "category": "笔记" },
+    { "name": "Obsidian",   "en": "Obsidian",     "category": "笔记" },
+    { "name": "日历",       "en": "Calendar",     "category": "效率" },
+    { "name": "提醒事项",   "en": "Reminders",    "category": "效率" },
+    { "name": "文件",       "en": "Files",        "category": "效率" },
+    { "name": "Numbers",    "en": "Numbers",      "category": "Office" },
+    { "name": "Pages",      "en": "Pages",        "category": "Office" },
+    { "name": "Keynote",    "en": "Keynote",      "category": "Office" },
+    { "name": "Microsoft Word","en": "Word",      "category": "Office" },
+    { "name": "Microsoft Excel","en": "Excel",    "category": "Office" }
+  ],
+
+  "finance_shopping": [
+    { "name": "支付宝",    "en": "Alipay",       "category": "金融" },
+    { "name": "招商银行",  "en": "CMB",          "category": "金融" },
+    { "name": "淘宝",      "en": "Taobao",       "category": "购物" },
+    { "name": "京东",      "en": "JD",           "category": "购物" },
+    { "name": "拼多多",    "en": "Pinduoduo",    "category": "购物" },
+    { "name": "Amazon购物","en": "Amazon",       "category": "购物" }
+  ],
+
+  "health_fitness": [
+    { "name": "健身",      "en": "Fitness",      "category": "健康" },
+    { "name": "健康",      "en": "Health",       "category": "健康" },
+    { "name": "睡眠",      "en": "Sleep",        "category": "健康" }
+  ],
+
+  "navigation": [
+    { "name": "地图",      "en": "Maps",         "category": "导航" },
+    { "name": "高德地图",  "en": "Amap",         "category": "导航" },
+    { "name": "百度地图",  "en": "Baidu Maps",   "category": "导航" }
+  ],
+
+  "system": [
+    { "name": "设置",      "en": "Settings",     "category": "系统", "_note": "追踪待在系统设置里的时间" },
+    { "name": "电话",      "en": "Phone",        "category": "系统" },
+    { "name": "相机",      "en": "Camera",       "category": "系统" },
+    { "name": "照片",      "en": "Photos",       "category": "系统" }
+  ]
+}

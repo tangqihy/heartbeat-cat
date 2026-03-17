@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Star-shaped golden glasses -->
+  <defs>
+    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="50%" style="stop-color:#FFA500"/>
+      <stop offset="100%" style="stop-color:#B8860B"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#starGrad)" stroke="#B8860B" stroke-width="0.8">
+    <!-- Left star -->
+    <path d="M 70 58 L 72 64 L 78 64 L 73 68 L 75 74 L 70 71 L 65 74 L 67 68 L 62 64 L 68 64 Z"/>
+    <!-- Right star -->
+    <path d="M 110 58 L 112 64 L 118 64 L 113 68 L 115 74 L 110 71 L 105 74 L 107 68 L 102 64 L 108 64 Z"/>
+    <!-- Bridge -->
+    <path d="M 78 66 L 102 66"/>
+  </g>
+</svg>

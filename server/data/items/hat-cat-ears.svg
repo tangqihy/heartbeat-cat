@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Cat ear headband -->
+  <path d="M 54 28 Q 90 24 126 28" fill="none" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 42 28 L 50 -6 L 58 28 Z" fill="#333"/>
+  <path d="M 122 28 L 130 -6 L 138 28 Z" fill="#333"/>
+</svg>

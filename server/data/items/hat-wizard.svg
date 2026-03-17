@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Tall wizard hat with stars -->
+  <path d="M 55 28 L 90 -55 L 125 28 L 118 32 L 62 32 Z" fill="#2d1b4e"/>
+  <path d="M 62 32 L 118 32" stroke="#6B4C9A" stroke-width="4"/>
+  <circle cx="90" cy="-40" r="2" fill="#FFD700"/>
+  <circle cx="75" cy="-15" r="1.5" fill="#FFD700"/>
+  <circle cx="105" cy="-20" r="1" fill="#FFF"/>
+</svg>

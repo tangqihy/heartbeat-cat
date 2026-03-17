@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Simple round helmet -->
+  <ellipse cx="90" cy="20" rx="55" ry="22" fill="#4a4a4a" stroke="#333" stroke-width="2"/>
+  <ellipse cx="90" cy="18" rx="52" ry="8" fill="#5a5a5a"/>
+</svg>

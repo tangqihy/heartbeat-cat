@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Pixelated/8-bit style sunglasses (black with thick frames) -->
+  <g fill="#1a1a1a" stroke="#0a0a0a" stroke-width="1">
+    <!-- Left lens - blocky pixels -->
+    <rect x="55" y="58" width="24" height="20" stroke="none"/>
+    <rect x="55" y="58" width="8" height="6" fill="#222"/>
+    <rect x="63" y="58" width="8" height="6" fill="#333"/>
+    <rect x="71" y="58" width="8" height="6" fill="#222"/>
+    <rect x="55" y="64" width="8" height="6" fill="#111"/>
+    <rect x="63" y="64" width="8" height="6" fill="#1a1a1a"/>
+    <rect x="71" y="64" width="8" height="6" fill="#111"/>
+    <!-- Right lens -->
+    <rect x="101" y="58" width="24" height="20" stroke="none"/>
+    <rect x="101" y="58" width="8" height="6" fill="#222"/>
+    <rect x="109" y="58" width="8" height="6" fill="#333"/>
+    <rect x="117" y="58" width="8" height="6" fill="#222"/>
+    <rect x="101" y="64" width="8" height="6" fill="#111"/>
+    <rect x="109" y="64" width="8" height="6" fill="#1a1a1a"/>
+    <rect x="117" y="64" width="8" height="6" fill="#111"/>
+    <!-- Bridge -->
+    <rect x="79" y="62" width="22" height="12" fill="#1a1a1a"/>
+    <!-- Left arm - pixel blocks -->
+    <rect x="47" y="62" width="10" height="8" fill="#1a1a1a"/>
+    <rect x="41" y="64" width="8" height="6" fill="#1a1a1a"/>
+    <!-- Right arm -->
+    <rect x="123" y="62" width="10" height="8" fill="#1a1a1a"/>
+    <rect x="131" y="64" width="8" height="6" fill="#1a1a1a"/>
+  </g>
+</svg>

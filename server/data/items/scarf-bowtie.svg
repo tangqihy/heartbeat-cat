@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Bowtie around neck, y~110-130 -->
+  <ellipse cx="70" cy="118" rx="14" ry="8" fill="#1565c0"/>
+  <ellipse cx="110" cy="118" rx="14" ry="8" fill="#1565c0"/>
+  <circle cx="90" cy="120" r="4" fill="#0d47a1"/>
+  <path d="M 70 118 L 90 124 L 110 118" fill="none" stroke="#0d47a1" stroke-width="1.5"/>
+</svg>

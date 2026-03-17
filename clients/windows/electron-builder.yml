@@ -1,0 +1,14 @@
+appId: com.heartbeat.windows
+productName: My Heartbeat
+directories:
+  output: release
+files:
+  - dist/**/*
+  - src/renderer/**/*
+  - src/main/get-foreground.ps1
+extraResources:
+  - from: src/main/get-foreground.ps1
+    to: get-foreground.ps1
+win:
+  target: portable
+  icon: null

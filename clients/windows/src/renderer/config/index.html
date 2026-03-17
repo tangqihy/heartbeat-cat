@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+<title>My Heartbeat — 设置</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #141414; color: #ddd;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px; padding: 24px;
+}
+h1 { font-size: 18px; color: #eee; margin-bottom: 20px; }
+.group { margin-bottom: 18px; }
+.group label { display: block; color: #888; font-size: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.group input, .group select {
+  width: 100%; padding: 8px 10px;
+  background: #1e1e1e; border: 1px solid #333; border-radius: 6px;
+  color: #ddd; font-size: 13px; outline: none;
+}
+.group input:focus { border-color: #5470c6; }
+.row { display: flex; gap: 12px; }
+.row .group { flex: 1; }
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.check-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: #5470c6; }
+.check-row label { color: #ccc; font-size: 13px; cursor: pointer; }
+.divider { border: none; border-top: 1px solid #2a2a2a; margin: 20px 0; }
+.btn {
+  display: block; width: 100%; padding: 10px;
+  background: #5470c6; border: none; border-radius: 6px;
+  color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: #4060b0; }
+.status { text-align: center; color: #73c0de; margin-top: 12px; font-size: 12px; min-height: 18px; }
+.ai-section { display: none; }
+.ai-section.visible { display: block; }
+</style>
+</head>
+<body>
+  <h1>My Heartbeat 设置</h1>
+
+  <div class="row">
+    <div class="group">
+      <label>设备 ID</label>
+      <input id="deviceId" placeholder="windows-pc">
+    </div>
+    <div class="group">
+      <label>设备名称</label>
+      <input id="deviceName" placeholder="Windows PC">
+    </div>
+  </div>
+
+  <div class="group">
+    <label>服务器地址</label>
+    <input id="serverUrl" placeholder="http://localhost:3000">
+  </div>
+
+  <div class="group">
+    <label>API Key</label>
+    <input id="apiKey" type="password" placeholder="与服务端一致">
+  </div>
+
+  <div class="group">
+    <label>心跳间隔（秒）</label>
+    <input id="heartbeatInterval" type="number" min="1" max="120" value="10">
+  </div>
+
+  <div class="check-row">
+    <input type="checkbox" id="showBongoCat">
+    <label for="showBongoCat">显示 Bongo Cat 悬浮窗</label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="check-row">
+    <input type="checkbox" id="aiEnabled">
+    <label for="aiEnabled">启用 AI 截图描述</label>
+  </div>
+
+  <div class="ai-section" id="aiSection">
+    <div class="group">
+      <label>Anthropic API Key</label>
+      <input id="anthropicApiKey" type="password" placeholder="sk-ant-...">
+    </div>
+    <div class="row">
+      <div class="group">
+        <label>AI 模型</label>
+        <input id="aiModel" placeholder="claude-haiku-4-5-20251001">
+      </div>
+      <div class="group">
+        <label>截图频率（每N次心跳）</label>
+        <input id="aiScreenshotEvery" type="number" min="1" max="60" value="6">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="saveBtn">保存</button>
+  <div class="status" id="status"></div>
+
+<script>
+const $ = (id) => document.getElementById(id)
+const api = window.heartbeatAPI
+
+const fields = ['deviceId','deviceName','serverUrl','apiKey','heartbeatInterval','anthropicApiKey','aiModel','aiScreenshotEvery']
+
+async function load() {
+  const cfg = await api.getConfig()
+  fields.forEach(f => { if ($(f)) $(f).value = cfg[f] ?? '' })
+  $('showBongoCat').checked = cfg.showBongoCat ?? true
+  $('aiEnabled').checked = !!cfg.anthropicApiKey
+  toggleAI()
+}
+
+function toggleAI() {
+  $('aiSection').classList.toggle('visible', $('aiEnabled').checked)
+}
+$('aiEnabled').addEventListener('change', toggleAI)
+
+$('saveBtn').addEventListener('click', async () => {
+  const data = {}
+  fields.forEach(f => {
+    const el = $(f)
+    if (!el) return
+    data[f] = el.type === 'number' ? Number(el.value) : el.value
+  })
+  data.showBongoCat = $('showBongoCat').checked
+  if (!$('aiEnabled').checked) {
+    data.anthropicApiKey = ''
+  }
+  await api.saveConfig(data)
+  $('status').textContent = '已保存，配置已生效'
+  setTimeout(() => { $('status').textContent = '' }, 3000)
+})
+
+load()
+</script>
+</body>
+</html>

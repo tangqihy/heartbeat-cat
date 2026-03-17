@@ -1,0 +1,39 @@
+# ~/.config/systemd/user/heartbeat.service
+#
+# Install:
+#   cp heartbeat.service ~/.config/systemd/user/
+#   systemctl --user enable --now heartbeat
+#
+# Logs:
+#   journalctl --user -u heartbeat -f
+
+[Unit]
+Description=My Heartbeat — Linux/Steam Deck client
+# Wait for network before starting
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Adjust WorkingDirectory to wherever you cloned the repo
+WorkingDirectory=%h/my-heartbeat/clients/linux
+
+# tsx must be in PATH — install globally: npm install -g tsx
+# Or use full path: /home/deck/.npm-global/bin/tsx
+ExecStart=tsx src/index.ts
+
+# Load .env from the client directory
+EnvironmentFile=%h/my-heartbeat/clients/linux/.env
+
+# Make DISPLAY available for xdotool (Desktop Mode)
+Environment=DISPLAY=:0
+
+Restart=on-failure
+RestartSec=15
+# Give time for network / Steam to be ready after boot
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+[Install]
+WantedBy=default.target

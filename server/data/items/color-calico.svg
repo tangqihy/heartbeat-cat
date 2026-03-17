@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165" data-color="#e8c89e">
+  <!-- Calico patches (placeholder) -->
+  <ellipse cx="70" cy="60" rx="15" ry="12" fill="#333333" opacity="0.4"/>
+  <ellipse cx="130" cy="90" rx="12" ry="10" fill="#c41e3a" opacity="0.35"/>
+  <ellipse cx="50" cy="100" rx="10" ry="8" fill="#333333" opacity="0.3"/>
+</svg>

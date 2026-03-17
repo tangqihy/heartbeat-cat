@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+<title>背包 / 衣柜</title>
+<style>
+:root {
+  --bg: #141414; --card: #1e1e1e; --border: #333;
+  --common: #aaa; --rare: #4fc3f7; --epic: #ce93d8; --legendary: #ffd54f;
+  --text: #e0e0e0; --text2: #888;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', sans-serif; padding: 16px;
+}
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.friend-code { color: var(--text2); font-size: 12px; }
+.energy-info { color: var(--text2); font-size: 13px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab {
+  padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; color: var(--text2); cursor: pointer;
+  font-size: 13px; font-family: inherit;
+}
+.tab.active { background: #333; color: #fff; border-color: #555; }
+
+/* Grid */
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+.item-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+  position: relative;
+}
+.item-card:hover { border-color: #555; transform: translateY(-2px); }
+.item-card.equipped { border-color: var(--rare); box-shadow: 0 0 8px rgba(79,195,247,0.3); }
+.item-card .rarity-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  position: absolute; top: 6px; right: 6px;
+}
+.item-card .item-icon { font-size: 28px; margin: 4px 0; }
+.item-card .item-name { font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-card .item-qty { font-size: 10px; color: var(--text2); margin-top: 2px; }
+.item-card .item-rarity { font-size: 9px; text-transform: uppercase; margin-top: 2px; }
+
+/* Craft section */
+.craft-section {
+  margin-top: 20px; padding: 16px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.craft-section h3 { font-size: 14px; margin-bottom: 10px; }
+.craft-desc { color: var(--text2); font-size: 12px; margin-bottom: 10px; }
+.craft-slots {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+  min-height: 40px;
+}
+.craft-slot {
+  width: 36px; height: 36px; border-radius: 6px;
+  border: 1px dashed var(--border); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text2);
+  cursor: pointer; position: relative;
+}
+.craft-slot.filled {
+  border-style: solid; background: #252525;
+}
+.craft-slot .slot-count {
+  position: absolute; bottom: -2px; right: -2px;
+  background: #444; color: #fff; font-size: 8px;
+  padding: 0 3px; border-radius: 3px;
+}
+.craft-bar { display: flex; align-items: center; gap: 10px; }
+.craft-count { color: var(--text2); font-size: 12px; }
+.craft-btn {
+  padding: 6px 20px; border-radius: 6px; border: none;
+  background: linear-gradient(135deg, #7c4dff, #4fc3f7);
+  color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.craft-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Result overlay */
+.result-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 999; cursor: pointer;
+}
+.result-item-name { font-size: 22px; font-weight: 700; margin-top: 8px; }
+.result-rarity { font-size: 13px; margin-top: 4px; text-transform: uppercase; }
+.result-upgraded { font-size: 14px; color: var(--legendary); margin-top: 6px; }
+
+/* Empty state */
+.empty { text-align: center; color: var(--text2); padding: 40px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>背包 / 衣柜</h1>
+    <div class="friend-code" id="friendCode"></div>
+  </div>
+  <div class="energy-info" id="energyInfo"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="inventory">背包</button>
+  <button class="tab" data-tab="catalog">图鉴</button>
+  <button class="tab" data-tab="equipped">穿戴中</button>
+</div>
+
+<div id="content"></div>
+
+<div class="craft-section" id="craftSection">
+  <h3>合成工坊</h3>
+  <div class="craft-desc">选择 10 个物品合成 1 个随机物品，有概率提升品质！</div>
+  <div class="craft-slots" id="craftSlots"></div>
+  <div class="craft-bar">
+    <span class="craft-count" id="craftCount">已选: 0 / 10</span>
+    <button class="craft-btn" id="craftBtn" disabled>合成</button>
+  </div>
+</div>
+
+<script>
+const api = window.heartbeatAPI
+
+const rarityColors = { common: '#aaa', rare: '#4fc3f7', epic: '#ce93d8', legendary: '#ffd54f' }
+const categoryIcons = {
+  hat: '🎩', glasses: '👓', scarf: '🧣', accessory: '✨', color: '🎨'
+}
+
+function esc(s) {
+  const d = document.createElement('span')
+  d.textContent = s
+  return d.innerHTML
+}
+
+let inventory = []
+let catalog = []
+let equipped = []
+let profile = null
+let currentTab = 'inventory'
+
+// Craft state: Map<item_id, count>
+let craftSelection = new Map()
+
+async function loadData() {
+  try {
+    const [inv, cat, prof] = await Promise.all([
+      api.bongoGetInventory(),
+      api.bongoGetCatalog(),
+      api.bongoGetProfile(),
+    ])
+    inventory = inv || []
+    catalog = cat || []
+    if (prof) {
+      profile = prof
+      equipped = prof.equipped || []
+      document.getElementById('friendCode').textContent = '好友码: ' + (prof.user?.friend_code || '')
+      const e = prof.energy || {}
+      document.getElementById('energyInfo').textContent =
+        `能量: ${e.energy || 0} | 已开: ${e.boxes_opened || 0} 箱`
+    }
+  } catch (err) {
+    console.warn('load data failed:', err)
+  }
+  render()
+}
+
+function render() {
+  const content = document.getElementById('content')
+  if (currentTab === 'inventory') renderInventory(content)
+  else if (currentTab === 'catalog') renderCatalog(content)
+  else renderEquipped(content)
+  renderCraftSlots()
+}
+
+function renderInventory(el) {
+  if (inventory.length === 0) {
+    el.innerHTML = '<div class="empty">还没有物品，去敲键盘积攒能量开宝箱吧！</div>'
+    return
+  }
+  const equippedIds = new Set(equipped.map(e => e.item_id))
+  el.innerHTML = '<div class="grid">' + inventory.map(item => {
+    const isEquipped = equippedIds.has(item.item_id)
+    const color = rarityColors[item.rarity] || '#aaa'
+    const icon = categoryIcons[item.category] || '❓'
+    const inCraft = craftSelection.get(item.item_id) || 0
+    const availQty = item.quantity - inCraft
+    return `
+      <div class="item-card ${isEquipped ? 'equipped' : ''}"
+           data-item-id="${item.item_id}" data-category="${item.category}"
+           data-qty="${availQty}" data-rarity="${item.rarity}">
+        <div class="rarity-dot" style="background:${color}"></div>
+        <div class="item-icon">${icon}</div>
+        <div class="item-name" style="color:${color}">${esc(item.name)}</div>
+        <div class="item-qty">x${item.quantity}${inCraft > 0 ? ` (${inCraft}已选)` : ''}</div>
+        <div class="item-rarity" style="color:${color}">${item.rarity}</div>
+      </div>
+    `
+  }).join('') + '</div>'
+
+  el.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('click', () => onItemClick(card))
+    card.addEventListener('contextmenu', (e) => { e.preventDefault(); onItemRightClick(card) })
+  })
+}
+
+function renderCatalog(el) {
+  const ownedSet = new Set(inventory.map(i => i.item_id))
+  el.innerHTML = '<div class="grid">' + catalog.map(item => {
+    const owned = ownedSet.has(item.id)
+    const color = rarityColors[item.rarity] || '#aaa'
+    const icon = categoryIcons[item.category] || '❓'
+    return `
+      <div class="item-card" style="${owned ? '' : 'opacity:0.4'}">
+        <div class="rarity-dot" style="background:${color}"></div>
+        <div class="item-icon">${icon}</div>
+        <div class="item-name" style="color:${color}">${esc(item.name)}</div>
+        <div class="item-rarity" style="color:${color}">${item.rarity}</div>
+        ${owned ? '<div class="item-qty" style="color:#4caf50">✓ 已拥有</div>' : '<div class="item-qty">未获得</div>'}
+      </div>
+    `
+  }).join('') + '</div>'
+}
+
+function renderEquipped(el) {
+  const slots = ['hat', 'glasses', 'scarf', 'accessory', 'color']
+  el.innerHTML = '<div class="grid">' + slots.map(slot => {
+    const item = equipped.find(e => e.slot === slot)
+    const icon = categoryIcons[slot] || '❓'
+    if (item) {
+      const color = rarityColors[item.rarity] || '#aaa'
+      return `
+        <div class="item-card equipped" data-slot="${slot}" data-unequip="true">
+          <div class="rarity-dot" style="background:${color}"></div>
+          <div class="item-icon">${icon}</div>
+          <div class="item-name" style="color:${color}">${esc(item.name)}</div>
+          <div class="item-rarity" style="color:${color}">${item.rarity}</div>
+          <div class="item-qty" style="color:#ef5350">点击卸下</div>
+        </div>
+      `
+    }
+    return `
+      <div class="item-card" style="opacity:0.4">
+        <div class="item-icon">${icon}</div>
+        <div class="item-name">${slot}</div>
+        <div class="item-qty">空</div>
+      </div>
+    `
+  }).join('') + '</div>'
+
+  el.querySelectorAll('.item-card[data-unequip]').forEach(card => {
+    card.addEventListener('click', async () => {
+      const slot = card.dataset.slot
+      await api.bongoEquipItem(slot)
+      await loadData()
+    })
+  })
+}
+
+// Left click: equip/unequip. Right click: add to craft.
+async function onItemClick(card) {
+  const itemId = card.dataset.itemId
+  const category = card.dataset.category
+  const slot = category === 'color' ? 'color' : category
+  try {
+    await api.bongoEquipItem(slot, itemId)
+    await loadData()
+  } catch (err) {
+    console.warn('equip failed:', err)
+  }
+}
+
+function onItemRightClick(card) {
+  const itemId = card.dataset.itemId
+  const availQty = parseInt(card.dataset.qty) || 0
+  if (availQty <= 0) return
+
+  const totalSelected = Array.from(craftSelection.values()).reduce((a, b) => a + b, 0)
+  if (totalSelected >= 10) return
+
+  craftSelection.set(itemId, (craftSelection.get(itemId) || 0) + 1)
+  render()
+}
+
+function renderCraftSlots() {
+  const slotsEl = document.getElementById('craftSlots')
+  const countEl = document.getElementById('craftCount')
+  const craftBtn = document.getElementById('craftBtn')
+
+  const total = Array.from(craftSelection.values()).reduce((a, b) => a + b, 0)
+  countEl.textContent = `已选: ${total} / 10`
+  craftBtn.disabled = total < 10
+
+  let html = ''
+  for (const [itemId, count] of craftSelection.entries()) {
+    const item = inventory.find(i => i.item_id === itemId)
+    const icon = item ? (categoryIcons[item.category] || '❓') : '❓'
+    for (let i = 0; i < count; i++) {
+      html += `<div class="craft-slot filled" data-remove="${esc(itemId)}" title="${esc(item?.name || itemId)}">${icon}<span class="slot-count">${count > 1 && i === 0 ? 'x' + count : ''}</span></div>`
+    }
+  }
+  for (let i = total; i < 10; i++) {
+    html += `<div class="craft-slot">${i + 1}</div>`
+  }
+  slotsEl.innerHTML = html
+
+  slotsEl.querySelectorAll('[data-remove]').forEach(slot => {
+    slot.addEventListener('click', () => {
+      const id = slot.dataset.remove
+      const cur = craftSelection.get(id) || 0
+      if (cur <= 1) craftSelection.delete(id)
+      else craftSelection.set(id, cur - 1)
+      render()
+    })
+  })
+}
+
+// Craft button handler
+document.getElementById('craftBtn').addEventListener('click', async () => {
+  const items = Array.from(craftSelection.entries()).map(([item_id, count]) => ({ item_id, count }))
+  const total = items.reduce((a, b) => a + b.count, 0)
+  if (total < 10) return
+
+  try {
+    const result = await api.bongoCraft(items)
+    if (result && result.ok) {
+      craftSelection.clear()
+      showCraftResult(result)
+      await loadData()
+    }
+  } catch (err) {
+    console.warn('craft failed:', err)
+  }
+})
+
+function showCraftResult(result) {
+  const item = result.item
+  const color = rarityColors[item.rarity] || '#fff'
+  const icon = categoryIcons[item.category] || '❓'
+  const overlay = document.createElement('div')
+  overlay.className = 'result-overlay'
+  overlay.innerHTML = `
+    <div style="font-size: 48px">${icon}</div>
+    <div class="result-item-name" style="color:${color}">${esc(item.name)}</div>
+    <div class="result-rarity" style="color:${color}">${esc(item.rarity)}</div>
+    ${result.upgraded ? '<div class="result-upgraded">品质提升！</div>' : ''}
+  `
+  overlay.addEventListener('click', () => overlay.remove())
+  document.body.appendChild(overlay)
+  setTimeout(() => overlay.remove(), 3000)
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    tab.classList.add('active')
+    currentTab = tab.dataset.tab
+    render()
+  })
+})
+
+loadData()
+</script>
+</body>
+</html>
