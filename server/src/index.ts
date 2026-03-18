@@ -10,6 +10,7 @@ import { deviceRoutes }    from './routes/devices'
 import { usageRoutes }     from './routes/usage'
 import { bongoRoutes }     from './routes/bongo'
 import { rpgRoutes }       from './routes/rpg'
+import { resourceRoutes }  from './routes/resources'
 import { addUser, removeUser, handleMessage } from './ws/hub'
 import { stmts } from './db/index'
 
@@ -25,6 +26,7 @@ async function start(): Promise<void> {
   await app.register(usageRoutes)
   await app.register(bongoRoutes)
   await app.register(rpgRoutes)
+  await app.register(resourceRoutes)
 
   // WebSocket endpoint for real-time Bongo Cat multiplayer
   app.get('/ws', { websocket: true }, (connection, req) => {

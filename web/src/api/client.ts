@@ -109,3 +109,49 @@ export async function getInputTrend(userId: string, days = 30) {
   const res = await fetch(`${BASE}/stats/input-trend?user_id=${userId}&days=${days}`)
   return res.json()
 }
+
+// Resources
+export interface ResourceInfo {
+  order_crystal: number
+  creation_shard: number
+  passion_spark: number
+  info_fragment: number
+  social_spark: number
+}
+
+export interface CategoryIntensity {
+  category: string
+  apm: number
+  focus_ratio: number
+  diversity: number
+  quality_bonus: number
+}
+
+export interface DailyResourceStat {
+  category: string
+  keyboard: number
+  mouse: number
+  duration: number
+  resource_earned: number
+}
+
+export async function getUserResources(userId: string): Promise<{ resources: ResourceInfo }> {
+  const res = await fetch(`${BASE}/user/resources?user_id=${userId}`)
+  return res.json()
+}
+
+export async function getUserResourcesDaily(userId: string, date?: string): Promise<{ date: string; stats: DailyResourceStat[] }> {
+  const qs = date ? `&date=${date}` : ''
+  const res = await fetch(`${BASE}/user/resources/daily?user_id=${userId}${qs}`)
+  return res.json()
+}
+
+export async function getUserIntensity(userId: string): Promise<{ metrics: CategoryIntensity[] }> {
+  const res = await fetch(`${BASE}/user/intensity?user_id=${userId}`)
+  return res.json()
+}
+
+export async function getAppCategories(): Promise<{ categories: Record<string, { name: string; resource: string; resource_name: string; icon: string; color: string }>; mappings: Record<string, string> }> {
+  const res = await fetch(`${BASE}/app-categories`)
+  return res.json()
+}

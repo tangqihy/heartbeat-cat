@@ -8,19 +8,57 @@ import { broadcastToUser } from '../ws/hub'
 import { getUserSkillEffect, ensureLevel } from '../services/level'
 import { trackDailyActivity } from '../services/quests'
 
+// ── Box cycle config ──
+
+interface BoxTypeConfig {
+  name: string
+  icon: string
+  color: string
+  guaranteed_floor: string | null
+  item_count: number
+  bonus_item_chance: number
+  drop_weights: Record<string, number>
+}
+
+interface BoxCycleConfig {
+  cycle: string[]
+  box_types: Record<string, BoxTypeConfig>
+}
+
+const boxCycleConfig: BoxCycleConfig = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../data/box-cycle.json'), 'utf-8'),
+)
+const CYCLE_LENGTH = boxCycleConfig.cycle.length
+
+// ── Catalyst config ──
+
+interface CatalystDef {
+  name: string
+  description: string
+  cost: number
+  effect: string
+  bonus_pct: number
+}
+
+const catalystConfigs: Record<string, CatalystDef> = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../data/catalyst-config.json'), 'utf-8'),
+).catalysts
+
 // ── Config ──
 
 const ENERGY_PER_BOX = 1000
 const ALLOWANCE_INTERVAL = 30 * 60 // 30 minutes per slot
 const MAX_ALLOWANCE = 48            // cap: 24 hours worth
-const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'] as const
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'] as const
 type Rarity = (typeof RARITY_ORDER)[number]
 
 const DROP_WEIGHTS: Record<Rarity, number> = {
-  common: 55,
-  rare: 30,
+  common: 35,
+  uncommon: 25,
+  rare: 20,
   epic: 12,
-  legendary: 3,
+  legendary: 6,
+  mythic: 2,
 }
 
 const CRAFT_COST = 10
@@ -37,20 +75,38 @@ function generateFriendCode(): string {
   return `MEOW-${code}`
 }
 
-function weightedRarityPick(rareBoost = 0): Rarity {
-  const weights = { ...DROP_WEIGHTS }
+function weightedRarityPick(
+  rareBoost = 0,
+  customWeights?: Record<string, number>,
+  guaranteedFloor?: string | null,
+): Rarity {
+  const baseWeights = customWeights
+    ? { ...customWeights } as Record<Rarity, number>
+    : { ...DROP_WEIGHTS }
+
   if (rareBoost > 0) {
-    weights.rare += rareBoost
-    weights.epic += Math.floor(rareBoost * 0.6)
-    weights.legendary += Math.floor(rareBoost * 0.3)
+    if (baseWeights.rare !== undefined) baseWeights.rare = (baseWeights.rare ?? 0) + rareBoost
+    if (baseWeights.epic !== undefined) baseWeights.epic = (baseWeights.epic ?? 0) + Math.floor(rareBoost * 0.6)
+    if (baseWeights.legendary !== undefined) baseWeights.legendary = (baseWeights.legendary ?? 0) + Math.floor(rareBoost * 0.3)
   }
-  const total = Object.values(weights).reduce((a, b) => a + b, 0)
+
+  const floorIdx = guaranteedFloor ? RARITY_ORDER.indexOf(guaranteedFloor as Rarity) : -1
+  if (floorIdx > 0) {
+    for (let i = 0; i < floorIdx; i++) {
+      (baseWeights as Record<string, number>)[RARITY_ORDER[i]] = 0
+    }
+  }
+
+  const total = Object.values(baseWeights).reduce((a, b) => a + (b as number), 0)
+  if (total <= 0) return RARITY_ORDER[Math.max(floorIdx, 0)]
+
   let r = Math.random() * total
-  for (const [rarity, w] of Object.entries(weights) as [Rarity, number][]) {
+  for (const rarity of RARITY_ORDER) {
+    const w = (baseWeights as Record<string, number>)[rarity] ?? 0
     r -= w
     if (r <= 0) return rarity
   }
-  return 'common'
+  return RARITY_ORDER[Math.max(floorIdx, 0)]
 }
 
 function pickRandomItem(rarity: Rarity): Record<string, unknown> | null {
@@ -239,14 +295,40 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  // ── Open treasure box ──
+  // ── Box roadmap: get next N boxes ──
+  app.get('/api/box/roadmap', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    const count = Math.min(Number((req.query as Record<string, string>).count) || 10, 20)
+
+    const posRow = stmts.getBoxRoadmapPosition.get({ user_id: userId }) as { cycle_position: number } | undefined
+    const position = posRow?.cycle_position ?? 0
+
+    const upcoming: Array<{ index: number; box_type: string; box_info: BoxTypeConfig }> = []
+    for (let i = 0; i < count; i++) {
+      const idx = (position + i) % CYCLE_LENGTH
+      const boxType = boxCycleConfig.cycle[idx]
+      upcoming.push({
+        index: i,
+        box_type: boxType,
+        box_info: boxCycleConfig.box_types[boxType],
+      })
+    }
+
+    return {
+      cycle_position: position,
+      cycle_length: CYCLE_LENGTH,
+      upcoming,
+    }
+  })
+
+  // ── Open treasure box (roadmap-aware) ──
   app.post<{ Body: { user_id: string } }>(
     '/api/box/open',
     async (req, reply) => {
       const { user_id } = req.body
       if (!user_id) return reply.code(400).send({ error: 'user_id required' })
 
-      // Refresh time-based allowance before the transaction
       const allowance = refreshAllowance(user_id)
       if (allowance.open_allowance <= 0) {
         return reply.code(429).send({
@@ -256,10 +338,31 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         })
       }
 
+      // Determine box type from roadmap
+      const posRow = stmts.getBoxRoadmapPosition.get({ user_id }) as { cycle_position: number } | undefined
+      const position = posRow?.cycle_position ?? 0
+      const boxType = boxCycleConfig.cycle[position % CYCLE_LENGTH]
+      const boxConfig = boxCycleConfig.box_types[boxType]
+
       const rareBoost = getUserSkillEffect(user_id, 'rare_boost')
-      const rarity = weightedRarityPick(rareBoost)
-      const item = pickRandomItem(rarity)
-      if (!item) return reply.code(500).send({ error: 'No items in catalog for rarity: ' + rarity })
+
+      // Pick items based on box config
+      const itemsToDrop: Array<Record<string, unknown>> = []
+      for (let i = 0; i < boxConfig.item_count; i++) {
+        const rarity = weightedRarityPick(rareBoost, boxConfig.drop_weights, boxConfig.guaranteed_floor)
+        const item = pickRandomItem(rarity)
+        if (item) itemsToDrop.push(item)
+      }
+      // Bonus item chance
+      if (boxConfig.bonus_item_chance > 0 && Math.random() < boxConfig.bonus_item_chance) {
+        const bonusRarity = weightedRarityPick(rareBoost, boxConfig.drop_weights, boxConfig.guaranteed_floor)
+        const bonusItem = pickRandomItem(bonusRarity)
+        if (bonusItem) itemsToDrop.push(bonusItem)
+      }
+
+      if (itemsToDrop.length === 0) {
+        return reply.code(500).send({ error: 'No items could be selected' })
+      }
 
       const now = Math.floor(Date.now() / 1000)
       const txResult = db.transaction(() => {
@@ -270,7 +373,11 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         }
         stmts.setEnergy.run({ user_id, energy: row.energy - ENERGY_PER_BOX })
         stmts.incrementBoxesOpened.run({ user_id, now })
-        stmts.upsertUserItem.run({ user_id, item_id: item.id as string, obtained_at: now })
+        for (const item of itemsToDrop) {
+          stmts.upsertUserItem.run({ user_id, item_id: item.id as string, obtained_at: now })
+        }
+        // Advance roadmap position
+        stmts.upsertBoxRoadmapPosition.run({ user_id, cycle_position: position + 1 })
         return { ok: true as const }
       })()
 
@@ -282,15 +389,28 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
       trackDailyActivity(user_id, 'box')
       const updatedEnergy = stmts.getEnergy.get({ user_id })
       triggerAchievementCheck(user_id)
-      return { ok: true, item, energy: updatedEnergy }
+
+      return {
+        ok: true,
+        box_type: boxType,
+        box_info: { name: boxConfig.name, icon: boxConfig.icon, color: boxConfig.color },
+        items: itemsToDrop,
+        item: itemsToDrop[0],
+        energy: updatedEnergy,
+        next_position: position + 1,
+      }
     },
   )
 
-  // ── Craft (10 items → 1 random, chance to upgrade rarity) ──
-  app.post<{ Body: { user_id: string; item_ids: Array<{ item_id: string; count: number }> } }>(
+  // ── Craft (10 items → 1 random, chance to upgrade rarity, optional catalyst) ──
+  app.post<{ Body: {
+    user_id: string
+    item_ids: Array<{ item_id: string; count: number }>
+    catalyst?: { resource_type: string; amount: number }
+  } }>(
     '/api/items/craft',
     async (req, reply) => {
-      const { user_id, item_ids } = req.body
+      const { user_id, item_ids, catalyst } = req.body
       if (!user_id || !item_ids) return reply.code(400).send({ error: 'user_id and item_ids required' })
       if (!Array.isArray(item_ids)) return reply.code(400).send({ error: 'item_ids must be an array' })
 
@@ -299,13 +419,58 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ error: `Need ${CRAFT_COST} items, got ${totalCount}` })
       }
 
-      // Apply craft_boost skill to upgrade chances
+      // Validate catalyst if provided
+      let catalystBonus = 0
+      let catalystEffect = ''
+      if (catalyst && catalyst.resource_type && catalyst.amount > 0) {
+        const catConfig = catalystConfigs[catalyst.resource_type]
+        if (!catConfig) return reply.code(400).send({ error: 'Invalid catalyst resource_type' })
+        if (catalyst.amount < catConfig.cost) {
+          return reply.code(400).send({ error: `Catalyst requires ${catConfig.cost} ${catConfig.name}` })
+        }
+        const resRow = stmts.getResourceAmount.get({
+          user_id,
+          resource_type: catalyst.resource_type,
+        }) as { amount: number } | undefined
+        if (!resRow || resRow.amount < catalyst.amount) {
+          return reply.code(400).send({ error: 'Not enough resources for catalyst' })
+        }
+        catalystBonus = catConfig.bonus_pct
+        catalystEffect = catConfig.effect
+      }
+
       const craftBoost = getUserSkillEffect(user_id, 'craft_boost')
-      const effectiveCraftUp1 = CRAFT_UP1_RATE + craftBoost / 100
+      let effectiveCraftUp1 = CRAFT_UP1_RATE + craftBoost / 100
+      let effectiveSameRate = Math.max(0, CRAFT_SAME_RATE - craftBoost / 100)
+
+      // Apply catalyst effect
+      if (catalystEffect === 'stability') {
+        effectiveSameRate = Math.max(0, effectiveSameRate - catalystBonus / 100)
+        effectiveCraftUp1 += catalystBonus / 200
+      } else if (catalystEffect === 'balanced') {
+        effectiveCraftUp1 += catalystBonus / 100
+        effectiveSameRate = Math.max(0, effectiveSameRate - catalystBonus / 200)
+      } else if (catalystEffect === 'gamble') {
+        effectiveCraftUp1 += catalystBonus / 100
+      } else if (catalystEffect === 'discovery' || catalystEffect === 'cosmetic') {
+        effectiveCraftUp1 += catalystBonus / 100
+      }
+
       const roll = Math.random()
 
       const txResult = db.transaction(() => {
-        // Validate ownership inside transaction to prevent TOCTOU
+        // Deduct catalyst resources inside transaction
+        if (catalyst && catalyst.resource_type && catalyst.amount > 0) {
+          const deductInfo = stmts.deductResource.run({
+            user_id,
+            resource_type: catalyst.resource_type,
+            amount: catalyst.amount,
+          })
+          if (deductInfo.changes === 0) {
+            return { error: 'Not enough resources for catalyst' as const }
+          }
+        }
+
         let maxRarityIdx = 0
         for (const { item_id, count } of item_ids) {
           if (!item_id || count <= 0) continue
@@ -320,10 +485,9 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         }
 
         let outputRarityIdx: number
-        const sameRate = Math.max(0, CRAFT_SAME_RATE - craftBoost / 100)
-        if (roll < sameRate) {
+        if (roll < effectiveSameRate) {
           outputRarityIdx = maxRarityIdx
-        } else if (roll < sameRate + effectiveCraftUp1) {
+        } else if (roll < effectiveSameRate + effectiveCraftUp1) {
           outputRarityIdx = maxRarityIdx + 1
         } else {
           outputRarityIdx = maxRarityIdx + 2
@@ -332,7 +496,6 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         const resultItem = pickRandomItem(outputRarity)
         if (!resultItem) return { error: `No items for rarity ${outputRarity}` as const }
 
-        // Consume input items
         let remaining = CRAFT_COST
         for (const { item_id, count } of item_ids) {
           const consume = Math.min(count, remaining)
@@ -352,6 +515,7 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
           upgraded: outputRarityIdx > maxRarityIdx,
           input_rarity: RARITY_ORDER[maxRarityIdx],
           output_rarity: outputRarity,
+          catalyst_used: !!catalyst,
         }
       })()
 

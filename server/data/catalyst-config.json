@@ -1,0 +1,39 @@
+{
+  "catalysts": {
+    "order_crystal": {
+      "name": "秩序晶体",
+      "description": "提升合成稳定性，降低降级概率",
+      "cost": 50,
+      "effect": "stability",
+      "bonus_pct": 10
+    },
+    "creation_shard": {
+      "name": "创造结晶",
+      "description": "提升合成品质，平衡的升级加成",
+      "cost": 50,
+      "effect": "balanced",
+      "bonus_pct": 8
+    },
+    "passion_spark": {
+      "name": "激情火花",
+      "description": "高风险高回报，大幅提升升级概率但有极小降级风险",
+      "cost": 50,
+      "effect": "gamble",
+      "bonus_pct": 15
+    },
+    "info_fragment": {
+      "name": "信息碎片",
+      "description": "增加获得未拥有物品的概率",
+      "cost": 50,
+      "effect": "discovery",
+      "bonus_pct": 8
+    },
+    "social_spark": {
+      "name": "社交火花",
+      "description": "增加获得装饰类物品的概率",
+      "cost": 50,
+      "effect": "cosmetic",
+      "bonus_pct": 8
+    }
+  }
+}

@@ -7,7 +7,7 @@
 <style>
 :root {
   --bg: #141414; --card: #1e1e1e; --border: #333;
-  --common: #aaa; --rare: #4fc3f7; --epic: #ce93d8; --legendary: #ffd54f;
+  --common: #9e9e9e; --uncommon: #4caf50; --rare: #2196f3; --epic: #9c27b0; --legendary: #ff9800; --mythic: #e91e63;
   --text: #e0e0e0; --text2: #888;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -240,6 +240,55 @@ body {
 .shop-card .shop-name { font-size: 12px; color: var(--text); }
 .shop-card .shop-cost { font-size: 11px; color: var(--epic); font-weight: 600; margin-top: 4px; }
 .shop-card .shop-rarity { font-size: 9px; text-transform: uppercase; margin-top: 2px; }
+
+/* ── Catalyst selector ── */
+.catalyst-section {
+  margin-top: 12px; padding: 10px; background: #1a1a1a;
+  border: 1px solid #2a2a2a; border-radius: 6px;
+}
+.catalyst-section h4 { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.catalyst-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.catalyst-opt {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text); cursor: pointer; font-size: 11px;
+  font-family: inherit; transition: all 0.2s;
+}
+.catalyst-opt:hover { border-color: #666; }
+.catalyst-opt.selected { border-color: var(--rare); background: rgba(33,150,243,0.1); }
+.catalyst-opt.insufficient { opacity: 0.4; cursor: not-allowed; }
+.catalyst-opt .cat-icon { font-size: 14px; }
+.catalyst-opt .cat-cost { color: var(--text2); font-size: 10px; }
+
+/* ── Resources panel tab ── */
+.resource-panel { padding: 16px; }
+.resource-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.resource-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; text-align: center;
+}
+.resource-card .res-icon { font-size: 32px; }
+.resource-card .res-name { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.resource-card .res-amount { font-size: 20px; font-weight: 700; margin-top: 4px; }
+.resource-card .res-desc { font-size: 10px; color: var(--text2); margin-top: 4px; }
+
+.intensity-section { margin-top: 16px; }
+.intensity-section h3 { font-size: 14px; margin-bottom: 10px; }
+.intensity-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.intensity-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px;
+}
+.intensity-card .int-cat { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.intensity-card .int-metric { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+.intensity-card .int-bonus { font-size: 12px; color: var(--uncommon); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -252,15 +301,7 @@ body {
   <div class="energy-info" id="energyInfo"></div>
 </div>
 
-<div class="tabs">
-  <button class="tab active" data-tab="inventory">物品</button>
-  <button class="tab" data-tab="catalog">图鉴</button>
-  <button class="tab" data-tab="equipped">穿戴</button>
-  <button class="tab" data-tab="skills">技能树</button>
-  <button class="tab" data-tab="quests">任务</button>
-  <button class="tab" data-tab="shop">商店</button>
-  <button class="tab" data-tab="achievements">成就</button>
-</div>
+<div class="tabs" id="tabsContainer"></div>
 
 <div id="content"></div>
 
@@ -268,6 +309,7 @@ body {
   <h3>合成工坊</h3>
   <div class="craft-desc">点击格子自动按稀有度填满（每种至少保留1个）；再次点击已填格子可移除，再点背包物品手动补位。</div>
   <div class="craft-slots" id="craftSlots"></div>
+  <div class="catalyst-section" id="catalystArea"></div>
   <div class="craft-bar">
     <span class="craft-count" id="craftCount">已选: 0 / 10</span>
     <button class="craft-btn" id="craftBtn" disabled>合成</button>
@@ -277,7 +319,14 @@ body {
 <script>
 const api = window.heartbeatAPI
 
-const rarityColors = { common: '#aaa', rare: '#4fc3f7', epic: '#ce93d8', legendary: '#ffd54f' }
+const rarityColors = {
+  common: '#9e9e9e', uncommon: '#4caf50', rare: '#2196f3',
+  epic: '#9c27b0', legendary: '#ff9800', mythic: '#e91e63',
+}
+const rarityNames = {
+  common: '普通', uncommon: '优秀', rare: '稀有',
+  epic: '史诗', legendary: '传说', mythic: '神话',
+}
 const categoryIcons = {
   hat: '🎩', glasses: '👓', scarf: '🧣', accessory: '✨', color: '🎨', keyboard: '⌨️'
 }
@@ -296,6 +345,18 @@ let achievementCatalog = []
 let unlockedAchievements = []
 let achievementProgress = {}
 let currentTab = 'inventory'
+let unlockConfig = null
+
+const TAB_DEFS = [
+  { id: 'inventory',    label: '物品' },
+  { id: 'equipped',     label: '穿戴' },
+  { id: 'catalog',      label: '图鉴' },
+  { id: 'achievements', label: '成就' },
+  { id: 'resources',    label: '资源' },
+  { id: 'quests',       label: '任务' },
+  { id: 'skills',       label: '技能树' },
+  { id: 'shop',         label: '商店' },
+]
 
 // RPG data
 let levelInfo = null
@@ -306,7 +367,13 @@ let activeQuests = []
 let userTokens = 0
 let shopItems = []
 
-const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 }
+const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5 }
+
+// Resource data
+let userResources = {}
+let intensityMetrics = []
+let catalystConfig = {}
+let selectedCatalyst = null
 const CRAFT_SLOT_COUNT = 10
 // Craft state: fixed slots, each slot stores item_id or null
 let craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
@@ -322,7 +389,7 @@ function closeEquipPopup() {
 
 async function loadData() {
   try {
-    const [inv, cat, prof, achCatalog, achUser, achProgress, lvl, tree, skills, quests, shop] = await Promise.all([
+    const [inv, cat, prof, achCatalog, achUser, achProgress, lvl, tree, skills, quests, shop, res, intensity, catConf, uCfg] = await Promise.all([
       api.bongoGetInventory(),
       api.bongoGetCatalog(),
       api.bongoGetProfile(),
@@ -334,6 +401,10 @@ async function loadData() {
       api.bongoGetSkills(),
       api.bongoGetActiveQuests(),
       api.bongoGetQuestShop(),
+      api.bongoGetResources().catch(() => null),
+      api.bongoGetIntensity().catch(() => null),
+      api.bongoGetCatalystConfig().catch(() => null),
+      api.bongoGetUnlockConfig().catch(() => null),
     ])
     inventory = inv || []
     catalog = cat || []
@@ -351,6 +422,10 @@ async function loadData() {
       userTokens = quests.tokens ?? 0
     }
     shopItems = shop || []
+    if (res) userResources = res.resources || {}
+    if (intensity) intensityMetrics = intensity.metrics || []
+    if (catConf) catalystConfig = catConf.catalysts || {}
+    if (uCfg) unlockConfig = uCfg
     if (prof) {
       profile = prof
       equipped = prof.equipped || []
@@ -363,6 +438,7 @@ async function loadData() {
   } catch (err) {
     console.warn('load data failed:', err)
   }
+  renderTabs()
   render()
 }
 
@@ -378,6 +454,7 @@ function render() {
   else if (currentTab === 'skills') renderSkillTree(content)
   else if (currentTab === 'quests') renderQuests(content)
   else if (currentTab === 'shop') renderShop(content)
+  else if (currentTab === 'resources') renderResourcePanel(content)
   else if (currentTab === 'achievements') renderAchievements(content)
   else renderInventory(content)
 
@@ -415,9 +492,17 @@ function renderInventory(el) {
   })
 }
 
+const CATALOG_PAGE_SIZE = 30
+let catalogPage = 0
+
 function renderCatalog(el) {
   const ownedSet = new Set(inventory.map(i => i.item_id))
-  el.innerHTML = '<div class="grid">' + catalog.map(item => {
+  const start = 0
+  const end = (catalogPage + 1) * CATALOG_PAGE_SIZE
+  const visible = catalog.slice(start, end)
+  const hasMore = end < catalog.length
+
+  el.innerHTML = '<div class="grid">' + visible.map(item => {
     const owned = ownedSet.has(item.id)
     const color = rarityColors[item.rarity] || '#aaa'
     const icon = categoryIcons[item.category] || '❓'
@@ -431,6 +516,16 @@ function renderCatalog(el) {
       </div>
     `
   }).join('') + '</div>'
+
+  if (hasMore) {
+    const btn = document.createElement('button')
+    btn.textContent = `加载更多 (${catalog.length - end} 剩余)`
+    btn.style.cssText = 'display:block;margin:12px auto;padding:6px 20px;border:1px solid #555;background:transparent;color:#aaa;border-radius:6px;cursor:pointer;font-family:inherit;'
+    btn.addEventListener('click', () => { catalogPage++; renderCatalog(el) })
+    el.appendChild(btn)
+  }
+
+  el.querySelector('.grid')?.setAttribute('data-count', String(ownedSet.size) + '/' + catalog.length)
 }
 
 function renderEquipped(el) {
@@ -487,6 +582,50 @@ function getAchievementProgressText(ach) {
     return `${current} / ${target}`
   }
   return ''
+}
+
+const RESOURCE_DEFS = {
+  order_crystal: { name: '秩序晶体', icon: '💎', color: '#42a5f5', desc: '来自办公软件的专注' },
+  creation_shard: { name: '创造结晶', icon: '🔮', color: '#ab47bc', desc: '来自开发工具的创造' },
+  passion_spark: { name: '激情火花', icon: '🔥', color: '#ef5350', desc: '来自游戏的激情' },
+  info_fragment: { name: '信息碎片', icon: '🧩', color: '#66bb6a', desc: '来自浏览器的探索' },
+  social_spark: { name: '社交火花', icon: '⚡', color: '#ffa726', desc: '来自聊天工具的交流' },
+}
+
+function renderResourcePanel(el) {
+  let html = '<div class="resource-panel">'
+  html += '<h3>五元素资源</h3>'
+  html += '<div class="resource-grid">'
+  for (const [key, def] of Object.entries(RESOURCE_DEFS)) {
+    const amount = userResources[key] || 0
+    html += `
+      <div class="resource-card" style="border-color: ${def.color}30">
+        <div class="res-icon">${def.icon}</div>
+        <div class="res-name" style="color:${def.color}">${def.name}</div>
+        <div class="res-amount" style="color:${def.color}">${amount.toLocaleString()}</div>
+        <div class="res-desc">${def.desc}</div>
+      </div>`
+  }
+  html += '</div>'
+
+  if (intensityMetrics.length > 0) {
+    const CAT_NAMES = { office: '办公', devtool: '工具', game: '游戏', browser: '浏览器', chat: '聊天' }
+    html += '<div class="intensity-section"><h3>今日强度指标</h3><div class="intensity-grid">'
+    for (const m of intensityMetrics) {
+      html += `
+        <div class="intensity-card">
+          <div class="int-cat">${CAT_NAMES[m.category] || m.category}</div>
+          <div class="int-metric">APM: ${m.apm}</div>
+          <div class="int-metric">专注比: ${(m.focus_ratio * 100).toFixed(0)}%</div>
+          <div class="int-metric">多样性: ${m.diversity} 应用</div>
+          <div class="int-bonus">品质加成 +${m.quality_bonus}%</div>
+        </div>`
+    }
+    html += '</div></div>'
+  }
+
+  html += '</div>'
+  el.innerHTML = html
 }
 
 function renderAchievements(el) {
@@ -822,7 +961,7 @@ function canAddItemToCraft(itemId) {
 function autoFillCraftSlots() {
   craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
   const equippedIds = getEquippedIdSet()
-  const rarities = ['common', 'rare', 'epic', 'legendary']
+  const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic']
 
   let targetRarity = null
   for (const rarity of rarities) {
@@ -877,6 +1016,34 @@ function renderCraftSlots() {
   }
   slotsEl.innerHTML = html
 
+  // Catalyst selector
+  const catEl = document.getElementById('catalystArea')
+  if (catEl && Object.keys(catalystConfig).length > 0) {
+    let catHtml = '<h4>催化剂 (可选)</h4><div class="catalyst-options">'
+    for (const [key, def] of Object.entries(catalystConfig)) {
+      const owned = userResources[key] || 0
+      const canUse = owned >= def.cost
+      const isSelected = selectedCatalyst === key
+      catHtml += `<button class="catalyst-opt ${isSelected ? 'selected' : ''} ${canUse ? '' : 'insufficient'}"
+        data-catalyst="${key}" ${canUse ? '' : 'disabled'}
+        title="${def.description}\n拥有: ${owned} / 消耗: ${def.cost}">
+        <span class="cat-icon">${RESOURCE_DEFS[key]?.icon || '?'}</span>
+        <span>${def.name}</span>
+        <span class="cat-cost">(${def.cost})</span>
+      </button>`
+    }
+    catHtml += '</div>'
+    catEl.innerHTML = catHtml
+
+    catEl.querySelectorAll('.catalyst-opt:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.catalyst
+        selectedCatalyst = selectedCatalyst === k ? null : k
+        renderCraftSlots()
+      })
+    })
+  }
+
   slotsEl.querySelectorAll('[data-slot-index]').forEach(slot => {
     slot.addEventListener('click', () => {
       const idx = Number(slot.dataset.slotIndex)
@@ -906,10 +1073,15 @@ document.getElementById('craftBtn').addEventListener('click', async () => {
   if (total < 10) return
 
   try {
-    const result = await api.bongoCraft(items)
+    let catalyst = undefined
+    if (selectedCatalyst && catalystConfig[selectedCatalyst]) {
+      catalyst = { resource_type: selectedCatalyst, amount: catalystConfig[selectedCatalyst].cost }
+    }
+    const result = await api.bongoCraft(items, catalyst)
     if (result && result.ok) {
       craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
       manualTargetSlot = null
+      selectedCatalyst = null
       showCraftResult(result)
       await loadData()
     }
@@ -935,15 +1107,33 @@ function showCraftResult(result) {
   setTimeout(() => overlay.remove(), 3000)
 }
 
-// Tab switching
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
-    tab.classList.add('active')
-    currentTab = tab.dataset.tab
-    render()
+function renderTabs() {
+  const container = document.getElementById('tabsContainer')
+  const userLevel = levelInfo?.level ?? 1
+  const tabs = unlockConfig?.tabs ?? {}
+
+  const visible = TAB_DEFS.filter(def => {
+    const minLv = tabs[def.id]
+    if (minLv === undefined) return true
+    return userLevel >= minLv
   })
-})
+
+  if (!visible.some(t => t.id === currentTab)) {
+    currentTab = visible[0]?.id ?? 'inventory'
+  }
+
+  container.innerHTML = visible.map(def =>
+    `<button class="tab ${def.id === currentTab ? 'active' : ''}" data-tab="${def.id}">${def.label}</button>`
+  ).join('')
+
+  container.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTab = btn.dataset.tab
+      renderTabs()
+      render()
+    })
+  })
+}
 
 loadData()
 </script>

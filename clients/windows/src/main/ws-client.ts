@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import { getConfig } from './config-store'
 import { BrowserWindow } from 'electron'
+import { activateAchievement } from './steam'
 
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -76,6 +77,8 @@ function forwardToRenderer(msg: Record<string, unknown>): void {
     bongoCatRef.webContents.send('ws-message', msg)
     if (msg.type === 'achievement_unlocked') {
       bongoCatRef.webContents.send('achievement-unlocked', msg)
+      const achId = (msg as any).achievement?.id
+      if (achId) activateAchievement(achId)
     }
     if (msg.type === 'interaction') {
       bongoCatRef.webContents.send('interaction-received', msg)

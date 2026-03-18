@@ -68,7 +68,7 @@ async function tick(): Promise<void> {
     await sendHeartbeat(cfg.serverUrl, cfg.apiKey, {
       device_id:    cfg.deviceId,
       device_name:  cfg.deviceName,
-      device_type:  'windows',
+      device_type:  process.platform === 'darwin' ? 'macos' : 'windows',
       app_name:     appName,
       app_title:    appTitle,
       input_events: inputCounts,

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, systemPreferences } from 'electron'
 import path from 'path'
 import { loadConfig, saveConfig, getConfig } from './config-store'
 import { createTray } from './tray'
@@ -8,6 +8,7 @@ import { initLockDetection } from './window-tracker'
 import * as bongoApi from './bongo-api'
 import { setBongoCatWindowRef, pushEnergyUpdate, pushEquipUpdate, fetchAndPushDailyInput, pushLevelUpdate } from './energy-push'
 import { connectWs, disconnectWs, setWsBongoCatRef, sendWsInputEvent, sendWsEquipChange } from './ws-client'
+import { initSteam, activateAchievement, shutdownSteam } from './steam'
 
 let configWindow:   BrowserWindow | null = null
 let bongoCatWindow: BrowserWindow | null = null
@@ -78,9 +79,11 @@ function showWardrobeWindow(): void {
     autoHideMenuBar: true,
     backgroundColor: '#141414',
     webPreferences: { preload: preloadPath, contextIsolation: true, nodeIntegration: false },
+    show: false,
   })
 
   wardrobeWindow.loadFile(rendererPath('wardrobe/index.html'))
+  wardrobeWindow.once('ready-to-show', () => wardrobeWindow?.show())
   wardrobeWindow.on('closed', () => { wardrobeWindow = null })
 }
 
@@ -95,9 +98,11 @@ function showFriendsWindow(): void {
     autoHideMenuBar: true,
     backgroundColor: '#141414',
     webPreferences: { preload: preloadPath, contextIsolation: true, nodeIntegration: false },
+    show: false,
   })
 
   friendsWindow.loadFile(rendererPath('friends/index.html'))
+  friendsWindow.once('ready-to-show', () => friendsWindow?.show())
   friendsWindow.on('closed', () => { friendsWindow = null })
 }
 
@@ -203,10 +208,10 @@ app.whenReady().then(async () => {
     return bongoApi.getUserProfile(cfg.userId)
   })
 
-  ipcMain.handle('bongo-craft', async (_e, items: Array<{ item_id: string; count: number }>) => {
+  ipcMain.handle('bongo-craft', async (_e, items: Array<{ item_id: string; count: number }>, catalyst?: { resource_type: string; amount: number }) => {
     const cfg = getConfig()
     if (!cfg.userId) return null
-    const result = await bongoApi.craftItems(cfg.userId, items)
+    const result = await bongoApi.craftItems(cfg.userId, items, catalyst)
     pushEnergyUpdate()
     return result
   })
@@ -301,6 +306,33 @@ app.whenReady().then(async () => {
     return bongoApi.getUserTokens(cfg.userId)
   })
 
+  // IPC: Resources & Roadmap
+  ipcMain.handle('bongo-get-resources', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getUserResources(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-get-intensity', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getUserIntensity(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-get-roadmap', async (_e, count?: number) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getBoxRoadmap(cfg.userId, count)
+  })
+
+  ipcMain.handle('bongo-get-catalyst-config', async () => {
+    return bongoApi.getCatalystConfig()
+  })
+
+  ipcMain.handle('bongo-get-unlock-config', async () => {
+    return bongoApi.getSystemUnlockConfig()
+  })
+
   // IPC: Daily input stats
   ipcMain.handle('bongo-get-daily-input', async () => {
     const cfg = getConfig()
@@ -334,6 +366,15 @@ app.whenReady().then(async () => {
   // Lock detection
   initLockDetection()
 
+  // macOS: check accessibility permission for input hook
+  if (process.platform === 'darwin') {
+    const isTrusted = (systemPreferences as any).isTrustedAccessibilityClient?.(false)
+    if (!isTrusted) {
+      console.warn('[input] macOS accessibility not granted — requesting...')
+      ;(systemPreferences as any).isTrustedAccessibilityClient?.(true)
+    }
+  }
+
   // Input hook — forward events to bongo cat renderer AND WebSocket
   setInputCallback((type) => {
     if (bongoCatWindow && !bongoCatWindow.isDestroyed()) {
@@ -341,7 +382,7 @@ app.whenReady().then(async () => {
     }
     sendWsInputEvent(type)
   })
-  startInputHook()
+  startInputHook().catch(err => console.error('[input] hook init failed:', err))
 
   // System tray
   createTray({
@@ -353,6 +394,7 @@ app.whenReady().then(async () => {
       disconnectWs()
       stopHeartbeatLoop()
       stopInputHook()
+      shutdownSteam()
       app.quit()
     },
   })
@@ -362,6 +404,9 @@ app.whenReady().then(async () => {
 
   // Heartbeat
   startHeartbeatLoop()
+
+  // Steam SDK (no-op if not configured or Steam not running)
+  initSteam().catch(() => {})
 
   // Auto-register user for gamification
   await ensureUserRegistered()

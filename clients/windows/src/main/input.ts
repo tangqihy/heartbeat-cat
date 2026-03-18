@@ -1,23 +1,24 @@
 /**
  * Input event counting — keyboard and mouse.
  * Filters key repeats: holding a key counts as one press until released.
+ * uiohook-napi is loaded lazily to speed up app startup.
  */
-import { uIOhook, UiohookKeyboardEvent } from 'uiohook-napi'
 
 let keyboardCount = 0
 let mouseCount    = 0
 let onInputCb: ((type: 'keyboard' | 'mouse') => void) | null = null
+let hookModule: typeof import('uiohook-napi') | null = null
 
 const pressedKeys = new Set<number>()
 
-function onKeydown(e: UiohookKeyboardEvent): void {
+function onKeydown(e: { keycode: number }): void {
   if (pressedKeys.has(e.keycode)) return
   pressedKeys.add(e.keycode)
   keyboardCount++
   onInputCb?.('keyboard')
 }
 
-function onKeyup(e: UiohookKeyboardEvent): void {
+function onKeyup(e: { keycode: number }): void {
   pressedKeys.delete(e.keycode)
 }
 
@@ -30,9 +31,11 @@ export function setInputCallback(cb: (type: 'keyboard' | 'mouse') => void): void
   onInputCb = cb
 }
 
-export function startInputHook(): void {
-  uIOhook.on('keydown', onKeydown)
-  uIOhook.on('keyup', onKeyup)
+export async function startInputHook(): Promise<void> {
+  hookModule = await import('uiohook-napi')
+  const { uIOhook } = hookModule
+  uIOhook.on('keydown', onKeydown as any)
+  uIOhook.on('keyup', onKeyup as any)
   uIOhook.on('mousedown', onMousedown)
   uIOhook.start()
 }
@@ -47,8 +50,10 @@ export function resetInputCounts(): void {
 }
 
 export function stopInputHook(): void {
-  uIOhook.off('keydown', onKeydown)
-  uIOhook.off('keyup', onKeyup)
+  if (!hookModule) return
+  const { uIOhook } = hookModule
+  uIOhook.off('keydown', onKeydown as any)
+  uIOhook.off('keyup', onKeyup as any)
   uIOhook.off('mousedown', onMousedown)
   pressedKeys.clear()
   uIOhook.stop()

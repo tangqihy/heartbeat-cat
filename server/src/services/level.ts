@@ -2,6 +2,36 @@ import { stmts } from '../db/index'
 import { readFileSync } from 'fs'
 import path from 'path'
 
+// ── System unlock config ──
+
+interface SystemUnlockConfig {
+  tabs: Record<string, number>
+}
+
+let unlockConfig: SystemUnlockConfig | null = null
+
+export function getSystemUnlockConfig(): SystemUnlockConfig {
+  if (!unlockConfig) {
+    const p = path.resolve(__dirname, '../../data/system-unlock.json')
+    unlockConfig = JSON.parse(readFileSync(p, 'utf-8'))
+  }
+  return unlockConfig!
+}
+
+export function getUnlockedSystems(level: number): string[] {
+  const config = getSystemUnlockConfig()
+  return Object.entries(config.tabs)
+    .filter(([, minLevel]) => level >= minLevel)
+    .map(([tab]) => tab)
+}
+
+export function getNewlyUnlockedSystems(oldLevel: number, newLevel: number): string[] {
+  const config = getSystemUnlockConfig()
+  return Object.entries(config.tabs)
+    .filter(([, minLevel]) => oldLevel < minLevel && newLevel >= minLevel)
+    .map(([tab]) => tab)
+}
+
 // XP needed to go from level N to N+1 = N * 100
 export function xpForLevel(level: number): number {
   return level * 100

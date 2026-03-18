@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('heartbeatAPI', {
   bongoGetInventory: ()                                    => ipcRenderer.invoke('bongo-get-inventory'),
   bongoEquipItem:  (slot: string, itemId?: string)         => ipcRenderer.invoke('bongo-equip-item', slot, itemId),
   bongoGetProfile: ()                                      => ipcRenderer.invoke('bongo-get-profile'),
-  bongoCraft:      (items: Array<{ item_id: string; count: number }>) => ipcRenderer.invoke('bongo-craft', items),
+  bongoCraft:      (items: Array<{ item_id: string; count: number }>, catalyst?: { resource_type: string; amount: number }) => ipcRenderer.invoke('bongo-craft', items, catalyst),
 
   bongoGetItemSvg: (svgRef: string)                     => ipcRenderer.invoke('bongo-get-item-svg', svgRef),
 
@@ -115,5 +115,18 @@ contextBridge.exposeInMainWorld('heartbeatAPI', {
     const handler = (_e: Electron.IpcRendererEvent, data: { level: number; experience: number; xp_to_next: number; xp_progress_pct: number; skill_points: number }) => cb(data)
     ipcRenderer.on('level-update', handler)
     return () => ipcRenderer.removeListener('level-update', handler)
+  },
+
+  // Resources & Roadmap
+  bongoGetResources: () => ipcRenderer.invoke('bongo-get-resources'),
+  bongoGetIntensity: () => ipcRenderer.invoke('bongo-get-intensity'),
+  bongoGetRoadmap: (count?: number) => ipcRenderer.invoke('bongo-get-roadmap', count),
+  bongoGetCatalystConfig: () => ipcRenderer.invoke('bongo-get-catalyst-config'),
+  bongoGetUnlockConfig: () => ipcRenderer.invoke('bongo-get-unlock-config'),
+
+  onResourceUpdate: (cb: (data: Record<string, number>) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: Record<string, number>) => cb(data)
+    ipcRenderer.on('resource-update', handler)
+    return () => ipcRenderer.removeListener('resource-update', handler)
   },
 })

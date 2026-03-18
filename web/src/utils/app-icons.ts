@@ -118,6 +118,33 @@ export function getAppIconUrl(appName: string): string {
   return `${APP_ICONS_BASE}/${getAppIconKey(appName)}.png`
 }
 
+export type AppCategory = 'office' | 'devtool' | 'game' | 'browser' | 'chat' | 'system' | 'other'
+
+const APP_CATEGORY_MAP: Record<string, AppCategory> = {
+  'excel': 'office', 'word': 'office', 'powerpoint': 'office', 'onenote': 'office',
+  'code': 'devtool', 'cursor': 'devtool', 'visual studio': 'devtool', 'terminal': 'devtool',
+  'powershell': 'devtool', 'cmd': 'devtool', 'docker': 'devtool', 'postman': 'devtool',
+  'figma': 'devtool', 'photoshop': 'devtool', 'git': 'devtool', 'vim': 'devtool',
+  'chrome': 'browser', 'edge': 'browser', 'firefox': 'browser', 'safari': 'browser', 'brave': 'browser',
+  'slack': 'chat', 'discord': 'chat', 'wechat': 'chat', 'teams': 'chat',
+  'zoom': 'chat', 'telegram': 'chat', 'outlook': 'chat',
+  'explorer': 'system', 'finder': 'system', 'settings': 'system',
+}
+
+export function getAppCategory(appName: string): AppCategory {
+  const key = normalizeAppName(appName)
+  if (APP_CATEGORY_MAP[key]) return APP_CATEGORY_MAP[key]
+  for (const [k, cat] of Object.entries(APP_CATEGORY_MAP)) {
+    if (key.startsWith(k) || key.includes(k)) return cat
+  }
+  return 'other'
+}
+
+export const CATEGORY_COLORS: Record<AppCategory, string> = {
+  office: '#42a5f5', devtool: '#ab47bc', game: '#ef5350',
+  browser: '#66bb6a', chat: '#ffa726', system: '#78909c', other: '#888',
+}
+
 /**
  * 返回用于显示的图标：若为 emoji 占位则返回该字符（未放图片时的回退），
  * 否则前端应优先用 getAppIconUrl 显示图片。

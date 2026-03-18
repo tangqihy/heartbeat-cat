@@ -5,6 +5,8 @@ import { heartbeatRoutes } from '../src/routes/heartbeat'
 import { deviceRoutes } from '../src/routes/devices'
 import { usageRoutes } from '../src/routes/usage'
 import { bongoRoutes } from '../src/routes/bongo'
+import { rpgRoutes } from '../src/routes/rpg'
+import { resourceRoutes } from '../src/routes/resources'
 
 // Disable API_KEY auth for tests
 delete process.env.API_KEY
@@ -15,6 +17,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(deviceRoutes)
   await app.register(usageRoutes)
   await app.register(bongoRoutes)
+  await app.register(rpgRoutes)
+  await app.register(resourceRoutes)
   app.get('/health', async () => ({ ok: true, ts: Date.now() }))
   await app.ready()
   return app
@@ -31,6 +35,14 @@ export function cleanUserData(): void {
     DELETE FROM daily_interaction_limits;
     DELETE FROM interactions;
     DELETE FROM friends;
+    DELETE FROM user_level;
+    DELETE FROM user_skills;
+    DELETE FROM user_quests;
+    DELETE FROM user_tokens;
+    DELETE FROM daily_activity;
+    DELETE FROM user_resources;
+    DELETE FROM daily_resource_stats;
+    DELETE FROM user_box_roadmap;
     DELETE FROM sessions;
     DELETE FROM heartbeat_snapshots;
     DELETE FROM devices;

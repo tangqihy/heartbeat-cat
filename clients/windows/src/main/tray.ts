@@ -24,18 +24,22 @@ function createHeartIcon(): Electron.NativeImage {
     '....##....',
   ]
   const ox = 3, oy = 4
+  const isMac = process.platform === 'darwin'
   for (let r = 0; r < pattern.length; r++) {
     for (let c = 0; c < pattern[r].length; c++) {
       if (pattern[r][c] === '#') {
         const i = ((oy + r) * s + (ox + c)) * 4
-        buf[i]     = 0x55
-        buf[i + 1] = 0x4b
-        buf[i + 2] = 0xff
-        buf[i + 3] = 0xff
+        if (isMac) {
+          buf[i] = 0x00; buf[i + 1] = 0x00; buf[i + 2] = 0x00; buf[i + 3] = 0xff
+        } else {
+          buf[i] = 0x55; buf[i + 1] = 0x4b; buf[i + 2] = 0xff; buf[i + 3] = 0xff
+        }
       }
     }
   }
-  return nativeImage.createFromBitmap(buf, { width: s, height: s })
+  const img = nativeImage.createFromBitmap(buf, { width: s, height: s })
+  if (isMac) img.setTemplateImage(true)
+  return img
 }
 
 export function createTray(cb: TrayCallbacks): Tray {

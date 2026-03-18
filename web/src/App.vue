@@ -31,13 +31,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineAsyncComponent } from 'vue'
 import { api, type Device } from './api/client'
-import DayView         from './views/DayView.vue'
-import WeekView        from './views/WeekView.vue'
-import StatsView       from './views/StatsView.vue'
-import LeaderboardView from './views/LeaderboardView.vue'
-import AchievementView from './views/AchievementView.vue'
+
+const DayView         = defineAsyncComponent(() => import('./views/DayView.vue'))
+const WeekView        = defineAsyncComponent(() => import('./views/WeekView.vue'))
+const StatsView       = defineAsyncComponent(() => import('./views/StatsView.vue'))
+const LeaderboardView = defineAsyncComponent(() => import('./views/LeaderboardView.vue'))
+const AchievementView = defineAsyncComponent(() => import('./views/AchievementView.vue'))
 
 const view     = ref<'day' | 'week' | 'stats' | 'leaderboard' | 'achievement'>('day')
 const userId   = ref('')

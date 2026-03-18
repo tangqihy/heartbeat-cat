@@ -3,6 +3,7 @@ import db, { stmts } from '../db/index'
 import {
   getUserLevel, getSkillTreeConfig, upgradeSkill,
   getUserSkillLevel, ensureLevel,
+  getUnlockedSystems, getSystemUnlockConfig,
 } from '../services/level'
 import {
   getActiveQuests, claimQuestReward,
@@ -21,7 +22,12 @@ export async function rpgRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/user/level', async (req, reply) => {
     const userId = resolveUserId(req)
     if (!userId) return reply.code(400).send({ error: 'user_id required' })
-    return getUserLevel(userId)
+    const info = getUserLevel(userId)
+    return { ...info, unlocked_systems: getUnlockedSystems(info.level) }
+  })
+
+  app.get('/api/system-unlock-config', async () => {
+    return getSystemUnlockConfig()
   })
 
   // ── Skill tree config ──

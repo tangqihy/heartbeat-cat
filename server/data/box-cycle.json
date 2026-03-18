@@ -1,0 +1,96 @@
+{
+  "cycle": [
+    "wooden", "wooden", "iron",   "wooden", "wooden",
+    "iron",   "wooden", "wooden", "iron",   "golden",
+    "wooden", "wooden", "iron",   "wooden", "wooden",
+    "iron",   "wooden", "golden", "wooden", "iron",
+    "wooden", "wooden", "iron",   "wooden", "wooden",
+    "iron",   "golden", "wooden", "iron",   "wooden",
+    "wooden", "iron",   "wooden", "wooden", "golden",
+    "iron",   "wooden", "wooden", "iron",   "wooden",
+    "golden", "iron",   "wooden", "wooden", "iron",
+    "wooden", "wooden", "magic",  "wooden", "legend"
+  ],
+  "box_types": {
+    "wooden": {
+      "name": "木箱",
+      "icon": "📦",
+      "color": "#8d6e63",
+      "guaranteed_floor": null,
+      "item_count": 1,
+      "bonus_item_chance": 0,
+      "drop_weights": {
+        "common": 40,
+        "uncommon": 28,
+        "rare": 18,
+        "epic": 10,
+        "legendary": 3,
+        "mythic": 1
+      }
+    },
+    "iron": {
+      "name": "铁箱",
+      "icon": "🗄️",
+      "color": "#78909c",
+      "guaranteed_floor": "uncommon",
+      "item_count": 1,
+      "bonus_item_chance": 0,
+      "drop_weights": {
+        "common": 20,
+        "uncommon": 32,
+        "rare": 26,
+        "epic": 14,
+        "legendary": 6,
+        "mythic": 2
+      }
+    },
+    "golden": {
+      "name": "金箱",
+      "icon": "✨",
+      "color": "#ffd54f",
+      "guaranteed_floor": "rare",
+      "item_count": 1,
+      "bonus_item_chance": 0.1,
+      "drop_weights": {
+        "common": 5,
+        "uncommon": 15,
+        "rare": 35,
+        "epic": 25,
+        "legendary": 14,
+        "mythic": 6
+      }
+    },
+    "magic": {
+      "name": "魔法箱",
+      "icon": "🔮",
+      "color": "#ab47bc",
+      "guaranteed_floor": "epic",
+      "item_count": 2,
+      "bonus_item_chance": 0.2,
+      "drop_weights": {
+        "common": 0,
+        "uncommon": 5,
+        "rare": 20,
+        "epic": 40,
+        "legendary": 25,
+        "mythic": 10
+      }
+    },
+    "legend": {
+      "name": "传说箱",
+      "icon": "👑",
+      "color": "#ff9800",
+      "guaranteed_floor": "legendary",
+      "item_count": 2,
+      "bonus_item_chance": 0.5,
+      "drop_weights": {
+        "common": 0,
+        "uncommon": 0,
+        "rare": 5,
+        "epic": 25,
+        "legendary": 45,
+        "mythic": 25
+      }
+    }
+  }
+}

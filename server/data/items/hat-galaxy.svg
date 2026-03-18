@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Mythic galaxy crown with stars and nebula -->
+  <defs>
+    <linearGradient id="galaxyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0033"/>
+      <stop offset="30%" style="stop-color:#4a0080"/>
+      <stop offset="60%" style="stop-color:#0044aa"/>
+      <stop offset="100%" style="stop-color:#1a0033"/>
+    </linearGradient>
+    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#fff;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <path d="M 45 28 L 50 -5 L 65 15 L 90 -20 L 115 15 L 130 -5 L 135 28 Z" fill="url(#galaxyGrad)" stroke="#8844cc" stroke-width="1.5"/>
+  <path d="M 45 28 L 135 28" stroke="#ffd700" stroke-width="2"/>
+  <circle cx="90" cy="-14" r="3" fill="url(#starGlow)"/>
+  <circle cx="65" cy="8" r="2" fill="url(#starGlow)"/>
+  <circle cx="115" cy="8" r="2" fill="url(#starGlow)"/>
+  <circle cx="78" cy="18" r="1.5" fill="#ffd700" opacity="0.8"/>
+  <circle cx="102" cy="18" r="1.5" fill="#ffd700" opacity="0.8"/>
+  <circle cx="55" cy="20" r="1" fill="#aaccff" opacity="0.6"/>
+  <circle cx="125" cy="20" r="1" fill="#aaccff" opacity="0.6"/>
+</svg>

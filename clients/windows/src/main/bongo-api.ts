@@ -65,10 +65,20 @@ export interface EquippedItem {
   svg_ref: string
 }
 
+export interface BoxTypeInfo {
+  name: string
+  icon: string
+  color: string
+}
+
 export interface BoxResult {
   ok: boolean
+  box_type: string
+  box_info: BoxTypeInfo
+  items: CatalogItem[]
   item: CatalogItem
   energy: EnergyInfo
+  next_position: number
 }
 
 export interface CraftResult {
@@ -77,6 +87,50 @@ export interface CraftResult {
   upgraded: boolean
   input_rarity: string
   output_rarity: string
+  catalyst_used: boolean
+}
+
+export interface RoadmapEntry {
+  index: number
+  box_type: string
+  box_info: {
+    name: string
+    icon: string
+    color: string
+    guaranteed_floor: string | null
+    item_count: number
+    bonus_item_chance: number
+  }
+}
+
+export interface RoadmapInfo {
+  cycle_position: number
+  cycle_length: number
+  upcoming: RoadmapEntry[]
+}
+
+export interface ResourceInfo {
+  order_crystal: number
+  creation_shard: number
+  passion_spark: number
+  info_fragment: number
+  social_spark: number
+}
+
+export interface CategoryIntensity {
+  category: string
+  apm: number
+  focus_ratio: number
+  diversity: number
+  quality_bonus: number
+}
+
+export interface CatalystDef {
+  name: string
+  description: string
+  cost: number
+  effect: string
+  bonus_pct: number
 }
 
 // ── API calls ──
@@ -102,8 +156,16 @@ export async function openBox(userId: string) {
   return api<BoxResult>('/api/box/open', 'POST', { user_id: userId })
 }
 
-export async function craftItems(userId: string, itemIds: Array<{ item_id: string; count: number }>) {
-  return api<CraftResult>('/api/items/craft', 'POST', { user_id: userId, item_ids: itemIds })
+export async function craftItems(
+  userId: string,
+  itemIds: Array<{ item_id: string; count: number }>,
+  catalyst?: { resource_type: string; amount: number },
+) {
+  return api<CraftResult>('/api/items/craft', 'POST', {
+    user_id: userId,
+    item_ids: itemIds,
+    ...(catalyst ? { catalyst } : {}),
+  })
 }
 
 export async function getCatalog() {
@@ -251,6 +313,11 @@ export interface LevelInfo {
   skill_points: number
   xp_to_next: number
   xp_progress_pct: number
+  unlocked_systems: string[]
+}
+
+export interface SystemUnlockConfig {
+  tabs: Record<string, number>
 }
 
 export interface SkillDef {
@@ -352,4 +419,30 @@ export async function buyShopItem(userId: string, shopItemId: string) {
 
 export async function getUserTokens(userId: string) {
   return api<{ tokens: number }>(`/api/user/tokens?user_id=${userId}`)
+}
+
+// ── Resources ──
+
+export async function getUserResources(userId: string) {
+  return api<{ resources: ResourceInfo }>(`/api/user/resources?user_id=${userId}`)
+}
+
+export async function getUserIntensity(userId: string) {
+  return api<{ metrics: CategoryIntensity[] }>(`/api/user/intensity?user_id=${userId}`)
+}
+
+// ── Box Roadmap ──
+
+export async function getBoxRoadmap(userId: string, count = 10) {
+  return api<RoadmapInfo>(`/api/box/roadmap?user_id=${userId}&count=${count}`)
+}
+
+// ── Catalyst Config ──
+
+export async function getCatalystConfig() {
+  return api<{ catalysts: Record<string, CatalystDef> }>('/api/catalyst-config')
+}
+
+export async function getSystemUnlockConfig() {
+  return api<SystemUnlockConfig>('/api/system-unlock-config')
 }

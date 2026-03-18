@@ -1,14 +1,44 @@
-appId: com.heartbeat.windows
+appId: com.heartbeat.desktop
 productName: My Heartbeat
 directories:
   output: release
+
+asar: true
+asarUnpack:
+  - "node_modules/uiohook-napi/**"
+  - "node_modules/screenshot-desktop/**"
+
 files:
   - dist/**/*
   - src/renderer/**/*
-  - src/main/get-foreground.ps1
-extraResources:
-  - from: src/main/get-foreground.ps1
-    to: get-foreground.ps1
+  - "!**/*.ts"
+  - "!**/*.map"
+  - "!**/node_modules/.cache/**"
+
 win:
-  target: portable
+  target:
+    - target: nsis
+      arch: [x64]
   icon: null
+  artifactName: "${productName}-${version}-win-${arch}.${ext}"
+  extraResources:
+    - from: src/main/get-foreground.ps1
+      to: get-foreground.ps1
+
+nsis:
+  oneClick: true
+  perMachine: false
+  deleteAppDataOnUninstall: false
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  icon: null
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  entitlements: entitlements.mac.plist
+  entitlementsInherit: entitlements.mac.plist

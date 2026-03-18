@@ -1,10 +1,12 @@
 /**
  * Foreground window detection + lock screen state.
- * Uses PowerShell for window info and Electron powerMonitor for lock events.
+ * Windows: PowerShell + user32.dll
+ * macOS: AppleScript (osascript)
  */
 import { execFileSync } from 'child_process'
 import { powerMonitor, app } from 'electron'
 import path from 'path'
+import { getForegroundAppDarwin } from './get-foreground-darwin'
 
 export interface ForegroundApp {
   appName: string
@@ -12,10 +14,6 @@ export interface ForegroundApp {
 }
 
 let locked = false
-
-const PS_SCRIPT = app.isPackaged
-  ? path.join(process.resourcesPath, 'get-foreground.ps1')
-  : path.join(app.getAppPath(), 'src', 'main', 'get-foreground.ps1')
 
 export function initLockDetection(): void {
   powerMonitor.on('lock-screen',   () => { locked = true })
@@ -27,6 +25,17 @@ export function isScreenLocked(): boolean {
 }
 
 export async function getForegroundApp(): Promise<ForegroundApp | null> {
+  if (process.platform === 'darwin') {
+    return getForegroundAppDarwin()
+  }
+  return getForegroundAppWindows()
+}
+
+function getForegroundAppWindows(): ForegroundApp | null {
+  const PS_SCRIPT = app.isPackaged
+    ? path.join(process.resourcesPath, 'get-foreground.ps1')
+    : path.join(app.getAppPath(), 'src', 'main', 'get-foreground.ps1')
+
   try {
     const raw = execFileSync('powershell', [
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',

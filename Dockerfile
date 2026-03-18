@@ -21,6 +21,7 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 COPY --from=server-build /app/server/dist ./server/dist
+COPY --from=server-build /app/server/data ./server/data
 COPY --from=server-build /app/server/package.json ./server/package.json
 COPY --from=server-build /app/server/package-lock.json ./server/package-lock.json
 RUN cd server && npm ci --omit=dev && apk del python3 make g++

@@ -98,6 +98,75 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 }
 .level-badge.flash { animation: levelUpFlash 0.8s ease-out; }
 
+/* Roadmap strip */
+.roadmap-row {
+  display: flex; align-items: center; gap: 3px; width: 220px; margin-top: 2px;
+  -webkit-app-region: no-drag; cursor: default;
+  font-family: 'Segoe UI', sans-serif;
+}
+.roadmap-box {
+  width: 18px; height: 18px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all 0.3s;
+  border: 1px solid rgba(255,255,255,0.1);
+  opacity: 0.6;
+}
+.roadmap-box.current {
+  opacity: 1; transform: scale(1.2);
+  border-color: rgba(255,255,255,0.5);
+  box-shadow: 0 0 6px rgba(255,255,255,0.3);
+}
+.roadmap-box.next { opacity: 0.8; }
+
+/* Resource mini bar */
+.resource-row {
+  display: flex; align-items: center; gap: 4px; width: 220px; margin-top: 2px;
+  -webkit-app-region: no-drag; cursor: default;
+  font-family: 'Segoe UI', sans-serif; font-size: 9px;
+}
+.resource-pip {
+  display: flex; align-items: center; gap: 1px;
+  color: rgba(255,255,255,0.7);
+}
+.resource-pip .r-icon { font-size: 10px; }
+.resource-pip .r-val { font-variant-numeric: tabular-nums; min-width: 16px; font-weight: 600; }
+
+/* Box open result overlay */
+.box-result-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.6); z-index: 2000;
+  pointer-events: auto; cursor: pointer;
+}
+.box-result-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 12px; padding: 16px; text-align: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  max-width: 200px;
+  animation: boxReveal 0.5s ease-out;
+}
+@keyframes boxReveal {
+  0% { transform: scale(0.3) rotateY(90deg); opacity: 0; }
+  50% { transform: scale(1.1) rotateY(0deg); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.box-result-type {
+  font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px;
+  font-family: 'Segoe UI', sans-serif;
+}
+.box-result-items {
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+.box-result-item-name {
+  font-size: 13px; font-weight: 700; margin-top: 4px;
+  font-family: 'Segoe UI', sans-serif;
+}
+.box-result-rarity {
+  font-size: 9px; padding: 1px 6px; border-radius: 3px;
+  display: inline-block; margin-top: 2px; font-weight: 600;
+  font-family: 'Segoe UI', sans-serif;
+}
+
 /* Friend cat mini */
 .friend-cat-wrap {
   display: flex; flex-direction: column; align-items: center;
@@ -277,11 +346,30 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
   <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill"></div></div>
   <span class="xp-label" id="xpLabel">0/100</span>
 </div>
+<div class="roadmap-row" id="roadmapRow"></div>
+<div class="resource-row" id="resourceRow"></div>
 
 <script>
 const api = window.heartbeatAPI
 let kbTotal = 0, msTotal = 0, nextPaw = 'left'
 let dailyKb = 0, dailyMs = 0
+let overlayUnlockConfig = null
+
+function updateOverlayVisibility() {
+  const tabs = overlayUnlockConfig?.tabs ?? {}
+  const lvl = currentLevel ?? 1
+  const roadmapMin = tabs.catalog ?? 3
+  const resourceMin = tabs.resources ?? 5
+  roadmapRow.style.display = lvl >= roadmapMin ? '' : 'none'
+  resourceRow.style.display = lvl >= resourceMin ? '' : 'none'
+}
+
+;(async () => {
+  try {
+    overlayUnlockConfig = await api.bongoGetUnlockConfig()
+  } catch {}
+  updateOverlayVisibility()
+})()
 
 const catSvg  = document.getElementById('catSvg')
 const pawL    = document.getElementById('pawL')
@@ -434,9 +522,10 @@ boxBtn.addEventListener('click', async (e) => {
   try {
     const result = await api.bongoOpenBox()
     if (result && result.ok) {
-      showBoxResult(result.item)
+      showBoxResult(result)
       if (openAllowance > 0) openAllowance--
       updateEnergyUI()
+      loadRoadmap()
     } else if (result && result.next_open_in) {
       nextOpenIn = result.next_open_in
       openAllowance = 0
@@ -557,6 +646,8 @@ function resetDefaultKeyboard() {
 
 api.onEquipUpdate((equipped) => renderEquipment(equipped))
 loadEquipment()
+loadRoadmap()
+loadResources()
 
 /* ── Box result popup ── */
 function esc(s) {
@@ -565,19 +656,105 @@ function esc(s) {
   return d.innerHTML
 }
 
-function showBoxResult(item) {
-  const rarityColors = { common: '#aaa', rare: '#4fc3f7', epic: '#ce93d8', legendary: '#ffd54f' }
+const RARITY_COLORS = {
+  common: '#9e9e9e', uncommon: '#4caf50', rare: '#2196f3',
+  epic: '#9c27b0', legendary: '#ff9800', mythic: '#e91e63',
+}
+
+const RARITY_NAMES = {
+  common: '普通', uncommon: '优秀', rare: '稀有',
+  epic: '史诗', legendary: '传说', mythic: '神话',
+}
+
+function showBoxResult(result) {
+  const items = result.items || [result.item]
+  const boxInfo = result.box_info || { name: '宝箱', icon: '🎁' }
   const overlay = document.createElement('div')
-  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;-webkit-app-region:no-drag;`
-  const color = rarityColors[item.rarity] || '#fff'
-  overlay.innerHTML = `<div style="font-size:36px;margin-bottom:8px;animation:boxDrop 0.4s ease-out">🎁</div><div style="color:${color};font-size:16px;font-weight:700;font-family:'Segoe UI',sans-serif">${esc(item.name)}</div><div style="color:${color};font-size:11px;opacity:0.8;margin-top:2px;font-family:'Segoe UI',sans-serif">${esc(item.rarity).toUpperCase()}</div>`
-  const style = document.createElement('style')
-  style.textContent = `@keyframes boxDrop{from{transform:translateY(-30px) scale(0.5);opacity:0}to{transform:none;opacity:1}}`
-  overlay.appendChild(style)
+  overlay.className = 'box-result-overlay'
+
+  let itemsHtml = ''
+  for (const item of items) {
+    const color = RARITY_COLORS[item.rarity] || '#fff'
+    itemsHtml += `<div>
+      <div style="font-size:28px;animation:boxReveal 0.5s ease-out">${boxInfo.icon}</div>
+      <div class="box-result-item-name" style="color:${color}">${esc(item.name)}</div>
+      <span class="box-result-rarity" style="background:${color};color:#000">${RARITY_NAMES[item.rarity] || item.rarity}</span>
+    </div>`
+  }
+
+  overlay.innerHTML = `<div class="box-result-card">
+    <div class="box-result-type">${esc(boxInfo.name)}</div>
+    <div class="box-result-items">${itemsHtml}</div>
+  </div>`
   overlay.addEventListener('click', () => overlay.remove())
   document.body.appendChild(overlay)
-  setTimeout(() => overlay.remove(), 3000)
+  setTimeout(() => overlay.remove(), 4000)
 }
+
+// ── Roadmap UI ──
+const roadmapRow = document.getElementById('roadmapRow')
+const resourceRow = document.getElementById('resourceRow')
+
+const BOX_COLORS = {
+  wooden: '#8d6e63', iron: '#78909c', golden: '#ffd54f',
+  magic: '#ab47bc', legend: '#ff9800',
+}
+const BOX_ICONS = {
+  wooden: '📦', iron: '🗄️', golden: '✨', magic: '🔮', legend: '👑',
+}
+
+async function loadRoadmap() {
+  try {
+    const data = await api.bongoGetRoadmap(8)
+    if (!data || !data.upcoming) return
+    roadmapRow.innerHTML = ''
+    data.upcoming.forEach((entry, i) => {
+      const el = document.createElement('div')
+      el.className = 'roadmap-box' + (i === 0 ? ' current' : i < 3 ? ' next' : '')
+      el.style.background = BOX_COLORS[entry.box_type] || '#555'
+      el.textContent = BOX_ICONS[entry.box_type] || '📦'
+      el.title = entry.box_info?.name || entry.box_type
+      roadmapRow.appendChild(el)
+    })
+  } catch {}
+}
+
+const RESOURCE_ICONS = {
+  order_crystal: '💎', creation_shard: '🔮', passion_spark: '🔥',
+  info_fragment: '🧩', social_spark: '⚡',
+}
+const RESOURCE_SHORT = {
+  order_crystal: '秩序', creation_shard: '创造', passion_spark: '激情',
+  info_fragment: '信息', social_spark: '社交',
+}
+
+async function loadResources() {
+  try {
+    const data = await api.bongoGetResources()
+    if (!data || !data.resources) return
+    resourceRow.innerHTML = ''
+    const types = ['order_crystal', 'creation_shard', 'passion_spark', 'info_fragment', 'social_spark']
+    for (const t of types) {
+      const val = data.resources[t] || 0
+      if (val <= 0) continue
+      const pip = document.createElement('span')
+      pip.className = 'resource-pip'
+      pip.innerHTML = `<span class="r-icon">${RESOURCE_ICONS[t]}</span><span class="r-val">${formatNum(val)}</span>`
+      pip.title = RESOURCE_SHORT[t] + ': ' + val
+      resourceRow.appendChild(pip)
+    }
+  } catch {}
+}
+
+function formatNum(n) {
+  if (n >= 10000) return (n / 1000).toFixed(1) + 'k'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
+
+api.onResourceUpdate((data) => {
+  loadResources()
+})
 
 /* ═══════════════════════════════════════════════════════════════════════
    FRIEND CATS — Real-time multi-cat rendering via WebSocket
@@ -793,6 +970,7 @@ function updateLevelUI(data) {
   const pct = data.xp_progress_pct ?? 0
   xpFill.style.width = Math.min(100, pct) + '%'
   xpLabel.textContent = (data.experience ?? 0) + '/' + (data.xp_to_next ?? 100)
+  updateOverlayVisibility()
 }
 
 api.onLevelUpdate((data) => updateLevelUI(data))
@@ -811,7 +989,16 @@ api.onLevelUp((data) => {
   }
   document.body.appendChild(banner)
   setTimeout(() => banner.remove(), 3200)
+
+  updateOverlayVisibility()
 })
+
+const TAB_LABELS = {
+  inventory: '物品', equipped: '穿戴', catalog: '图鉴',
+  achievements: '成就', resources: '资源', quests: '任务',
+  skills: '技能树', shop: '商店',
+}
+
 
 // Load initial level
 ;(async () => {
@@ -844,6 +1031,21 @@ api.onWsMessage((msg) => {
         levelBadge.textContent = 'Lv.' + currentLevel
         levelBadge.classList.add('flash')
         setTimeout(() => levelBadge.classList.remove('flash'), 1000)
+      }
+      break
+    case 'system_unlocked':
+      if (Array.isArray(msg.systems)) {
+        for (const sys of msg.systems) {
+          const label = TAB_LABELS[sys.id] || sys.id
+          const banner = document.createElement('div')
+          banner.className = 'achieve-banner'
+          banner.style.background = 'linear-gradient(135deg, #4fc3f7, #7c4dff)'
+          banner.style.color = '#fff'
+          banner.textContent = '\uD83D\uDD13 解锁 「' + label + '」'
+          document.body.appendChild(banner)
+          setTimeout(() => banner.remove(), 3500)
+        }
+        updateOverlayVisibility()
       }
       break
   }

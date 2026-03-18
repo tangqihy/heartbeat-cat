@@ -1,5 +1,5 @@
 import { stmts } from '../db/index'
-import { addExperience, getUserSkillEffect } from './level'
+import { addExperience, getUserSkillEffect, getNewlyUnlockedSystems, getSystemUnlockConfig, ensureLevel } from './level'
 import { broadcastToUser } from '../ws/hub'
 
 interface InputEvents {
@@ -28,6 +28,8 @@ export function accumulateEnergy(
   stmts.upsertEnergy.run({ user_id: userId, energy: boostedEnergy })
 
   // Also accumulate XP (always 1:1 with raw input, not boosted)
+  ensureLevel(userId)
+  const prevLevel = (stmts.getUserLevel.get({ user_id: userId }) as { level: number })?.level ?? 1
   const levelResult = addExperience(userId, total)
   if (levelResult.leveled_up) {
     broadcastToUser(userId, {
@@ -35,5 +37,19 @@ export function accumulateEnergy(
       new_level: levelResult.new_level,
       skill_points_gained: levelResult.skill_points_gained,
     })
+
+    const newSystems = getNewlyUnlockedSystems(prevLevel, levelResult.new_level)
+    if (newSystems.length > 0) {
+      const config = getSystemUnlockConfig()
+      const unlocked = newSystems.map(id => ({
+        id,
+        min_level: config.tabs[id] ?? 0,
+      }))
+      broadcastToUser(userId, {
+        type: 'system_unlocked',
+        systems: unlocked,
+        new_level: levelResult.new_level,
+      })
+    }
   }
 }

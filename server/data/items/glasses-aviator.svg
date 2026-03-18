@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -5 220 165">
+  <!-- Aviator sunglasses with teardrop shape -->
+  <defs>
+    <linearGradient id="aviatorLens" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6741"/>
+      <stop offset="100%" style="stop-color:#2d4a28"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="#c9a84c" stroke-width="1.5">
+    <path d="M 56 62 Q 56 56, 70 56 Q 84 56, 84 66 Q 84 80, 68 82 Q 56 80, 56 62 Z" fill="url(#aviatorLens)"/>
+    <path d="M 96 62 Q 96 56, 110 56 Q 124 56, 124 66 Q 124 80, 112 82 Q 96 80, 96 62 Z" fill="url(#aviatorLens)"/>
+    <path d="M 84 64 Q 90 60, 96 64"/>
+    <path d="M 56 62 L 46 60"/>
+    <path d="M 124 62 L 134 60"/>
+  </g>
+</svg>

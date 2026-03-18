@@ -2,6 +2,9 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { stmts } from '../db/index'
 import { handleHeartbeat, closeSession, IOS_TIMEOUT_SEC } from '../services/session'
 import { accumulateEnergy } from '../services/energy'
+import { accumulateResources } from '../services/resources'
+import { getCategoryQualityBonus } from '../services/intensity'
+import { categorizeApp } from '../services/app-category'
 
 interface InputEvents {
   keyboard: number
@@ -81,6 +84,20 @@ export async function heartbeatRoutes(app: FastifyInstance): Promise<void> {
         accumulateEnergy(device_id, input_events)
       } catch (err) {
         app.log.error('[heartbeat] accumulateEnergy failed: %s', (err as Error).message)
+      }
+
+      try {
+        let qualityBonus = 0
+        const category = categorizeApp(app_name, ai_context?.activity_type)
+        if (category) {
+          const row = stmts.getUserIdByDevice.get({ device_id }) as { user_id: string | null } | undefined
+          if (row?.user_id) {
+            qualityBonus = getCategoryQualityBonus(row.user_id, category)
+          }
+        }
+        accumulateResources(device_id, app_name, input_events, ai_context?.activity_type, qualityBonus)
+      } catch (err) {
+        app.log.error('[heartbeat] accumulateResources failed: %s', (err as Error).message)
       }
 
       if (ai_context) {

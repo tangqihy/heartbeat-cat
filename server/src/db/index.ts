@@ -206,6 +206,50 @@ db.exec(`
     interactions_done INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, date)
   );
+
+  -- ── Resource system ──
+
+  CREATE TABLE IF NOT EXISTS user_resources (
+    user_id       TEXT    NOT NULL,
+    resource_type TEXT    NOT NULL,
+    amount        INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, resource_type)
+  );
+
+  CREATE TABLE IF NOT EXISTS daily_resource_stats (
+    user_id         TEXT    NOT NULL,
+    date            TEXT    NOT NULL,
+    category        TEXT    NOT NULL,
+    keyboard        INTEGER NOT NULL DEFAULT 0,
+    mouse           INTEGER NOT NULL DEFAULT 0,
+    duration        INTEGER NOT NULL DEFAULT 0,
+    resource_earned INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, date, category)
+  );
+
+  -- ── Box roadmap ──
+
+  CREATE TABLE IF NOT EXISTS user_box_roadmap (
+    user_id        TEXT    PRIMARY KEY,
+    cycle_position INTEGER NOT NULL DEFAULT 0
+  );
+
+  -- ── Performance indexes ──
+
+  CREATE INDEX IF NOT EXISTS idx_daily_input_user_date
+    ON daily_input_stats(user_id, date);
+  CREATE INDEX IF NOT EXISTS idx_daily_resource_user_date
+    ON daily_resource_stats(user_id, date);
+  CREATE INDEX IF NOT EXISTS idx_user_items_user
+    ON user_items(user_id);
+  CREATE INDEX IF NOT EXISTS idx_interactions_to_user
+    ON interactions(to_user, created_at);
+  CREATE INDEX IF NOT EXISTS idx_interactions_from_user
+    ON interactions(from_user, created_at);
+  CREATE INDEX IF NOT EXISTS idx_daily_activity_user_date
+    ON daily_activity(user_id, date);
+  CREATE INDEX IF NOT EXISTS idx_sessions_device_app
+    ON sessions(device_id, app_name, start_time);
 `)
 
 // Add user_id column to devices if missing (safe migration)
@@ -746,6 +790,79 @@ export const stmts = {
 
   getDailyActivity: db.prepare(`
     SELECT * FROM daily_activity WHERE user_id = @user_id AND date = @date
+  `),
+
+  // ── Resources ──
+
+  upsertResource: db.prepare(`
+    INSERT INTO user_resources (user_id, resource_type, amount)
+    VALUES (@user_id, @resource_type, @amount)
+    ON CONFLICT(user_id, resource_type) DO UPDATE SET
+      amount = user_resources.amount + @amount
+  `),
+
+  getUserResources: db.prepare(`
+    SELECT resource_type, amount FROM user_resources WHERE user_id = @user_id
+  `),
+
+  deductResource: db.prepare(`
+    UPDATE user_resources SET amount = amount - @amount
+    WHERE user_id = @user_id AND resource_type = @resource_type AND amount >= @amount
+  `),
+
+  getResourceAmount: db.prepare(`
+    SELECT COALESCE(amount, 0) as amount FROM user_resources
+    WHERE user_id = @user_id AND resource_type = @resource_type
+  `),
+
+  upsertDailyResourceStats: db.prepare(`
+    INSERT INTO daily_resource_stats (user_id, date, category, keyboard, mouse, duration, resource_earned)
+    VALUES (@user_id, @date, @category, @keyboard, @mouse, @duration, @resource_earned)
+    ON CONFLICT(user_id, date, category) DO UPDATE SET
+      keyboard = daily_resource_stats.keyboard + @keyboard,
+      mouse    = daily_resource_stats.mouse    + @mouse,
+      duration = daily_resource_stats.duration + @duration,
+      resource_earned = daily_resource_stats.resource_earned + @resource_earned
+  `),
+
+  getDailyResourceStats: db.prepare(`
+    SELECT category, keyboard, mouse, duration, resource_earned
+    FROM daily_resource_stats
+    WHERE user_id = @user_id AND date = @date
+  `),
+
+  getDailyResourceStatsRange: db.prepare(`
+    SELECT date, category, keyboard, mouse, duration, resource_earned
+    FROM daily_resource_stats
+    WHERE user_id = @user_id AND date >= @start_date AND date <= @end_date
+    ORDER BY date ASC
+  `),
+
+  // ── Box roadmap ──
+
+  getBoxRoadmapPosition: db.prepare(`
+    SELECT cycle_position FROM user_box_roadmap WHERE user_id = @user_id
+  `),
+
+  upsertBoxRoadmapPosition: db.prepare(`
+    INSERT INTO user_box_roadmap (user_id, cycle_position)
+    VALUES (@user_id, @cycle_position)
+    ON CONFLICT(user_id) DO UPDATE SET cycle_position = @cycle_position
+  `),
+
+  // ── Intensity: session aggregates by category (for today) ──
+
+  getSessionStatsByAppToday: db.prepare(`
+    SELECT app_name,
+           SUM(duration) as total_duration,
+           SUM(keyboard_events) as total_keyboard,
+           SUM(mouse_events) as total_mouse,
+           MAX(duration) as max_session_duration,
+           COUNT(*) as session_count
+    FROM sessions
+    WHERE device_id IN (SELECT id FROM devices WHERE user_id = @user_id)
+      AND start_time >= @day_start AND start_time < @day_end
+    GROUP BY app_name
   `),
 }
 

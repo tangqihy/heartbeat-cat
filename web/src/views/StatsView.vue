@@ -65,6 +65,40 @@
             <AppWordCloud v-else :items="appUsageNoLock" />
           </div>
         </section>
+
+        <!-- Resource distribution -->
+        <section class="section" v-if="hasResources">
+          <h2 class="section-title">五元素资源</h2>
+          <div class="resource-cards">
+            <div
+              v-for="r in resourceList"
+              :key="r.key"
+              class="resource-card"
+              :style="{ borderColor: r.color + '40' }"
+            >
+              <span class="res-icon">{{ r.icon }}</span>
+              <span class="res-name" :style="{ color: r.color }">{{ r.name }}</span>
+              <span class="res-amount" :style="{ color: r.color }">{{ r.amount.toLocaleString() }}</span>
+            </div>
+          </div>
+          <div class="chart-box" v-if="resourcePieOption">
+            <v-chart :option="resourcePieOption" autoresize style="height: 260px" />
+          </div>
+        </section>
+
+        <!-- Intensity metrics -->
+        <section class="section" v-if="intensityData.length">
+          <h2 class="section-title">今日活动强度</h2>
+          <div class="intensity-cards">
+            <div v-for="m in intensityData" :key="m.category" class="intensity-card">
+              <div class="int-cat">{{ catNames[m.category] || m.category }}</div>
+              <div class="int-row"><span class="int-label">APM</span><span class="int-val">{{ m.apm }}</span></div>
+              <div class="int-row"><span class="int-label">专注比</span><span class="int-val">{{ (m.focus_ratio * 100).toFixed(0) }}%</span></div>
+              <div class="int-row"><span class="int-label">多样性</span><span class="int-val">{{ m.diversity }} 应用</span></div>
+              <div class="int-bonus">品质加成 +{{ m.quality_bonus }}%</div>
+            </div>
+          </div>
+        </section>
       </template>
     </template>
   </div>
@@ -72,7 +106,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { api, getHeatmap, getInputTrend } from '../api/client'
+import { api, getHeatmap, getInputTrend, getUserResources, getUserIntensity } from '../api/client'
+import type { ResourceInfo, CategoryIntensity } from '../api/client'
 import { getAppColor, formatDuration, excludeLockScreen } from '../utils/colors'
 import { getAppIconUrl } from '../utils/app-icons'
 import AppWordCloud from '../components/AppWordCloud.vue'
@@ -84,6 +119,50 @@ const error = ref('')
 const heatmapData = ref<Array<{ date: string; keyboard_count: number; mouse_count: number }>>([])
 const inputTrend = ref<Array<{ date: string; keyboard_count: number; mouse_count: number }>>([])
 const appUsage = ref<Array<{ app_name: string; total_duration: number; total_keyboard: number; total_mouse: number }>>([])
+const resources = ref<ResourceInfo | null>(null)
+const intensityData = ref<CategoryIntensity[]>([])
+
+const catNames: Record<string, string> = {
+  office: '办公', devtool: '工具', game: '游戏', browser: '浏览器', chat: '聊天',
+}
+
+const RESOURCE_DEFS: Record<string, { name: string; icon: string; color: string }> = {
+  order_crystal: { name: '秩序晶体', icon: '💎', color: '#42a5f5' },
+  creation_shard: { name: '创造结晶', icon: '🔮', color: '#ab47bc' },
+  passion_spark: { name: '激情火花', icon: '🔥', color: '#ef5350' },
+  info_fragment: { name: '信息碎片', icon: '🧩', color: '#66bb6a' },
+  social_spark: { name: '社交火花', icon: '⚡', color: '#ffa726' },
+}
+
+const hasResources = computed(() => resources.value && Object.values(resources.value).some(v => v > 0))
+
+const resourceList = computed(() => {
+  if (!resources.value) return []
+  return Object.entries(RESOURCE_DEFS).map(([key, def]) => ({
+    key,
+    ...def,
+    amount: (resources.value as any)[key] || 0,
+  }))
+})
+
+const resourcePieOption = computed(() => {
+  if (!hasResources.value) return null
+  const data = resourceList.value.filter(r => r.amount > 0)
+  return {
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['50%', '50%'],
+      data: data.map(r => ({
+        name: r.name,
+        value: r.amount,
+        itemStyle: { color: r.color },
+      })),
+    }],
+  }
+})
 
 const appUsageNoLock = computed(() => excludeLockScreen(appUsage.value))
 const totalDurationNoLock = computed(() => appUsageNoLock.value.reduce((s, r) => s + r.total_duration, 0))
@@ -237,20 +316,26 @@ async function load(): Promise<void> {
     const dayStart = Math.floor(today.getTime() / 1000)
     const dayEnd = dayStart + 86400
 
-    const [heat, trend, usage] = await Promise.all([
+    const [heat, trend, usage, res, intensity] = await Promise.all([
       getHeatmap(props.userId),
       getInputTrend(props.userId, 30),
       api.getUsageSummary(dayStart, dayEnd),
+      getUserResources(props.userId).catch(() => null),
+      getUserIntensity(props.userId).catch(() => null),
     ])
     heatmapData.value = heat
     inputTrend.value = trend
     appUsage.value = usage
+    resources.value = res?.resources ?? null
+    intensityData.value = intensity?.metrics ?? []
   } catch (e) {
     console.error(e)
     error.value = '加载失败，请检查服务器连接'
     heatmapData.value = []
     inputTrend.value = []
     appUsage.value = []
+    resources.value = null
+    intensityData.value = []
   } finally {
     loading.value = false
   }
@@ -339,4 +424,42 @@ watch(
   min-height: 8px;
 }
 .cell.empty { background: #252525 !important; }
+
+.resource-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.resource-card {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.res-icon { font-size: 24px; }
+.res-name { font-size: 12px; font-weight: 600; }
+.res-amount { font-size: 18px; font-weight: 700; }
+
+.intensity-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.intensity-card {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+}
+.int-cat { font-size: 13px; font-weight: 600; color: #ddd; margin-bottom: 6px; }
+.int-row { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 2px; }
+.int-label { color: #666; }
+.int-val { color: #aaa; }
+.int-bonus { font-size: 12px; color: #4caf50; font-weight: 600; margin-top: 4px; }
 </style>

@@ -1,0 +1,12 @@
+{
+  "tabs": {
+    "inventory": 1,
+    "equipped": 1,
+    "catalog": 3,
+    "achievements": 3,
+    "resources": 5,
+    "quests": 7,
+    "skills": 10,
+    "shop": 12
+  }
+}
