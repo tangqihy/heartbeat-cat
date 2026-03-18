@@ -1,0 +1,14 @@
+[
+  { "id": "daily-kb-3000",    "name": "键盘战士",   "description": "今日键盘输入达到 3,000 次",        "type": "daily",  "condition": "{\"type\":\"daily_keyboard\",\"target\":3000}",                 "reward_type": "token",  "reward_amount": 2,  "icon": "⌨️" },
+  { "id": "daily-kb-5000",    "name": "键盘大师",   "description": "今日键盘输入达到 5,000 次",        "type": "daily",  "condition": "{\"type\":\"daily_keyboard\",\"target\":5000}",                 "reward_type": "token",  "reward_amount": 3,  "icon": "🔥" },
+  { "id": "daily-ms-1000",    "name": "鼠标精灵",   "description": "今日鼠标点击达到 1,000 次",        "type": "daily",  "condition": "{\"type\":\"daily_mouse\",\"target\":1000}",                    "reward_type": "token",  "reward_amount": 2,  "icon": "🖱️" },
+  { "id": "daily-ms-2000",    "name": "点击风暴",   "description": "今日鼠标点击达到 2,000 次",        "type": "daily",  "condition": "{\"type\":\"daily_mouse\",\"target\":2000}",                    "reward_type": "token",  "reward_amount": 3,  "icon": "⚡" },
+  { "id": "daily-total-5000", "name": "高效一天",   "description": "今日键鼠总输入达到 5,000 次",      "type": "daily",  "condition": "{\"type\":\"daily_total\",\"target\":5000}",                    "reward_type": "token",  "reward_amount": 3,  "icon": "💪" },
+  { "id": "daily-total-8000", "name": "冲刺日",     "description": "今日键鼠总输入达到 8,000 次",      "type": "daily",  "condition": "{\"type\":\"daily_total\",\"target\":8000}",                    "reward_type": "token",  "reward_amount": 5,  "icon": "🚀" },
+  { "id": "daily-box-1",      "name": "开箱达人",   "description": "今日开启 1 个宝箱",               "type": "daily",  "condition": "{\"type\":\"daily_box\",\"target\":1}",                         "reward_type": "energy", "reward_amount": 300, "icon": "📦" },
+  { "id": "daily-interact-1", "name": "友善问候",   "description": "今日与好友互动 1 次",             "type": "daily",  "condition": "{\"type\":\"daily_interact\",\"target\":1}",                    "reward_type": "energy", "reward_amount": 200, "icon": "🤝" },
+  { "id": "daily-craft-1",    "name": "炼金术士",   "description": "今日合成 1 次",                   "type": "daily",  "condition": "{\"type\":\"daily_craft\",\"target\":1}",                       "reward_type": "token",  "reward_amount": 2,  "icon": "🔮" },
+
+  { "id": "weekly-streak-7",  "name": "全勤奖",     "description": "本周每天输入均超过 1,000 次",     "type": "weekly", "condition": "{\"type\":\"weekly_streak\",\"target\":7,\"daily_min\":1000}",  "reward_type": "token",  "reward_amount": 15, "icon": "🏅" },
+  { "id": "weekly-total-30k", "name": "周度冲刺",   "description": "本周键鼠总输入达到 30,000 次",    "type": "weekly", "condition": "{\"type\":\"weekly_total\",\"target\":30000}",                  "reward_type": "token",  "reward_amount": 10, "icon": "🚀" }
+]

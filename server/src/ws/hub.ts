@@ -82,6 +82,11 @@ export function isUserOnline(userId: string): boolean {
   return onlineUsers.has(userId)
 }
 
+export function broadcastToUser(userId: string, msg: WsMessage): void {
+  const user = onlineUsers.get(userId)
+  if (user) send(user.socket, msg)
+}
+
 // ── Internals ──
 
 function getOnlineFriendIds(userId: string): string[] {

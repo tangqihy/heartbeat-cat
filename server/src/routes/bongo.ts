@@ -3,10 +3,16 @@ import { randomUUID } from 'crypto'
 import { readFileSync, existsSync } from 'fs'
 import path from 'path'
 import db, { stmts } from '../db/index'
+import { checkAchievements } from '../services/achievements'
+import { broadcastToUser } from '../ws/hub'
+import { getUserSkillEffect, ensureLevel } from '../services/level'
+import { trackDailyActivity } from '../services/quests'
 
 // ── Config ──
 
 const ENERGY_PER_BOX = 1000
+const ALLOWANCE_INTERVAL = 30 * 60 // 30 minutes per slot
+const MAX_ALLOWANCE = 48            // cap: 24 hours worth
 const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'] as const
 type Rarity = (typeof RARITY_ORDER)[number]
 
@@ -31,10 +37,16 @@ function generateFriendCode(): string {
   return `MEOW-${code}`
 }
 
-function weightedRarityPick(): Rarity {
-  const total = Object.values(DROP_WEIGHTS).reduce((a, b) => a + b, 0)
+function weightedRarityPick(rareBoost = 0): Rarity {
+  const weights = { ...DROP_WEIGHTS }
+  if (rareBoost > 0) {
+    weights.rare += rareBoost
+    weights.epic += Math.floor(rareBoost * 0.6)
+    weights.legendary += Math.floor(rareBoost * 0.3)
+  }
+  const total = Object.values(weights).reduce((a, b) => a + b, 0)
   let r = Math.random() * total
-  for (const [rarity, w] of Object.entries(DROP_WEIGHTS) as [Rarity, number][]) {
+  for (const [rarity, w] of Object.entries(weights) as [Rarity, number][]) {
     r -= w
     if (r <= 0) return rarity
   }
@@ -83,9 +95,72 @@ function seedCatalog(): void {
 
 seedCatalog()
 
+function seedAchievements(): void {
+  const achPath = path.resolve(__dirname, '../../data/achievements.json')
+  try {
+    const raw = readFileSync(achPath, 'utf-8')
+    const items = JSON.parse(raw) as Array<{
+      id: string; name: string; description: string; icon: string
+      category: string; condition: string; reward_energy: number
+    }>
+    const tx = db.transaction(() => {
+      for (const a of items) stmts.upsertAchievement.run(a)
+    })
+    tx()
+  } catch (err) {
+    console.warn('[bongo] failed to seed achievements:', (err as Error).message)
+  }
+}
+
+seedAchievements()
+
 // ── Routes ──
 
 export async function bongoRoutes(app: FastifyInstance): Promise<void> {
+
+  /** Compute & persist time-accrued open slots for a user. */
+  function refreshAllowance(userId: string): { open_allowance: number; next_open_in: number; effective_interval: number } {
+    const cdReduce = getUserSkillEffect(userId, 'cooldown_reduce')
+    const effectiveInterval = Math.max(60, Math.floor(ALLOWANCE_INTERVAL * (1 - cdReduce / 100)))
+
+    const row = stmts.getEnergy.get({ user_id: userId }) as
+      { open_allowance: number; last_allowance_ts: number } | undefined
+    if (!row) return { open_allowance: 0, next_open_in: effectiveInterval, effective_interval: effectiveInterval }
+
+    const now = Math.floor(Date.now() / 1000)
+    let { open_allowance, last_allowance_ts } = row
+
+    if (last_allowance_ts === 0) {
+      stmts.updateAllowance.run({ user_id: userId, open_allowance: 1, last_allowance_ts: now })
+      return { open_allowance: 1, next_open_in: effectiveInterval, effective_interval: effectiveInterval }
+    }
+
+    const elapsed = now - last_allowance_ts
+    const newSlots = Math.floor(elapsed / effectiveInterval)
+    if (newSlots > 0) {
+      open_allowance = Math.min(open_allowance + newSlots, MAX_ALLOWANCE)
+      last_allowance_ts += newSlots * effectiveInterval
+      stmts.updateAllowance.run({ user_id: userId, open_allowance, last_allowance_ts })
+    }
+
+    const timeSinceLastSlot = now - last_allowance_ts
+    const next_open_in = open_allowance > 0 ? 0 : Math.max(0, effectiveInterval - timeSinceLastSlot)
+    return { open_allowance, next_open_in, effective_interval: effectiveInterval }
+  }
+
+  function triggerAchievementCheck(userId: string): void {
+    try {
+      const unlocked = checkAchievements(userId)
+      for (const ach of unlocked) {
+        broadcastToUser(userId, {
+          type: 'achievement_unlocked',
+          achievement: ach,
+        })
+      }
+    } catch (err) {
+      app.log.error('[achievements] check failed: %s', (err as Error).message)
+    }
+  }
 
   // ── User registration ──
   app.post<{ Body: { device_id: string; display_name: string; cat_color?: string } }>(
@@ -117,6 +192,7 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
           })
           stmts.bindDeviceToUser.run({ user_id: id, device_id })
           stmts.upsertEnergy.run({ user_id: id, energy: 0 })
+          ensureLevel(id)
 
           const user = stmts.getUserById.get({ id })
           return { ok: true, user, existing: false }
@@ -142,15 +218,24 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/user/energy', async (req, reply) => {
     const userId = resolveUserId(req)
     if (!userId) return reply.code(400).send({ error: 'user_id required' })
-    const row = stmts.getEnergy.get({ user_id: userId }) as { energy: number; boxes_opened: number } | undefined
+    const row = stmts.getEnergy.get({ user_id: userId }) as
+      { energy: number; boxes_opened: number } | undefined
     if (!row) return reply.code(404).send({ error: 'User not found' })
-    const availableBoxes = Math.floor(row.energy / ENERGY_PER_BOX)
+
+    const allowance = refreshAllowance(userId)
+    const energyBoxes = Math.floor(row.energy / ENERGY_PER_BOX)
+    const canOpen = Math.min(energyBoxes, allowance.open_allowance)
+
     return {
       energy: row.energy,
       energy_per_box: ENERGY_PER_BOX,
-      available_boxes: availableBoxes,
+      available_boxes: canOpen,
+      energy_boxes: energyBoxes,
       progress: row.energy % ENERGY_PER_BOX,
       boxes_opened: row.boxes_opened,
+      open_allowance: allowance.open_allowance,
+      next_open_in: allowance.next_open_in,
+      allowance_interval: allowance.effective_interval,
     }
   })
 
@@ -161,7 +246,18 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
       const { user_id } = req.body
       if (!user_id) return reply.code(400).send({ error: 'user_id required' })
 
-      const rarity = weightedRarityPick()
+      // Refresh time-based allowance before the transaction
+      const allowance = refreshAllowance(user_id)
+      if (allowance.open_allowance <= 0) {
+        return reply.code(429).send({
+          error: 'No open slots available',
+          next_open_in: allowance.next_open_in,
+          allowance_interval: ALLOWANCE_INTERVAL,
+        })
+      }
+
+      const rareBoost = getUserSkillEffect(user_id, 'rare_boost')
+      const rarity = weightedRarityPick(rareBoost)
       const item = pickRandomItem(rarity)
       if (!item) return reply.code(500).send({ error: 'No items in catalog for rarity: ' + rarity })
 
@@ -173,7 +269,7 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
           return { error: 'not_enough' as const, energy: row.energy }
         }
         stmts.setEnergy.run({ user_id, energy: row.energy - ENERGY_PER_BOX })
-        stmts.incrementBoxesOpened.run({ user_id })
+        stmts.incrementBoxesOpened.run({ user_id, now })
         stmts.upsertUserItem.run({ user_id, item_id: item.id as string, obtained_at: now })
         return { ok: true as const }
       })()
@@ -183,7 +279,9 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ error: 'Not enough energy', energy: txResult.energy, required: ENERGY_PER_BOX })
       }
 
+      trackDailyActivity(user_id, 'box')
       const updatedEnergy = stmts.getEnergy.get({ user_id })
+      triggerAchievementCheck(user_id)
       return { ok: true, item, energy: updatedEnergy }
     },
   )
@@ -201,7 +299,9 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ error: `Need ${CRAFT_COST} items, got ${totalCount}` })
       }
 
-      // Determine output rarity (roll before transaction)
+      // Apply craft_boost skill to upgrade chances
+      const craftBoost = getUserSkillEffect(user_id, 'craft_boost')
+      const effectiveCraftUp1 = CRAFT_UP1_RATE + craftBoost / 100
       const roll = Math.random()
 
       const txResult = db.transaction(() => {
@@ -220,9 +320,10 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         }
 
         let outputRarityIdx: number
-        if (roll < CRAFT_SAME_RATE) {
+        const sameRate = Math.max(0, CRAFT_SAME_RATE - craftBoost / 100)
+        if (roll < sameRate) {
           outputRarityIdx = maxRarityIdx
-        } else if (roll < CRAFT_SAME_RATE + CRAFT_UP1_RATE) {
+        } else if (roll < sameRate + effectiveCraftUp1) {
           outputRarityIdx = maxRarityIdx + 1
         } else {
           outputRarityIdx = maxRarityIdx + 2
@@ -258,6 +359,8 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ error: txResult.error })
       }
 
+      trackDailyActivity(user_id, 'craft')
+      triggerAchievementCheck(user_id)
       return txResult
     },
   )
@@ -275,7 +378,7 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── Equip / unequip ──
-  const VALID_SLOTS = new Set(['hat', 'glasses', 'scarf', 'accessory', 'color'])
+  const VALID_SLOTS = new Set(['hat', 'glasses', 'scarf', 'accessory', 'color', 'keyboard'])
 
   app.post<{ Body: { user_id: string; slot: string; item_id?: string } }>(
     '/api/items/equip',
@@ -335,6 +438,7 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
       })
       tx()
 
+      triggerAchievementCheck(user_id)
       return { ok: true, friend_id: target.id }
     },
   )
@@ -410,6 +514,220 @@ export async function bongoRoutes(app: FastifyInstance): Promise<void> {
       online: lastSeen?.last_seen ? (now - lastSeen.last_seen) < 60 : false,
       last_seen: lastSeen?.last_seen ?? null,
     }
+  })
+
+  // ── Daily input stats ──
+
+  function todayDateStr(): string {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  app.get('/api/user/daily-input', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    const date = (req.query as Record<string, string>).date || todayDateStr()
+    const row = stmts.getDailyInput.get({ user_id: userId, date }) as
+      { keyboard_count: number; mouse_count: number } | undefined
+    return {
+      date,
+      keyboard: row?.keyboard_count ?? 0,
+      mouse: row?.mouse_count ?? 0,
+    }
+  })
+
+  app.post<{ Body: { user_id: string; keyboard: number; mouse: number } }>(
+    '/api/user/daily-input',
+    async (req, reply) => {
+      const { user_id, keyboard, mouse } = req.body
+      if (!user_id) return reply.code(400).send({ error: 'user_id required' })
+      const kb = Math.max(0, Math.floor(Number(keyboard) || 0))
+      const ms = Math.max(0, Math.floor(Number(mouse) || 0))
+      if (kb === 0 && ms === 0) return { ok: true }
+      const date = todayDateStr()
+      stmts.upsertDailyInput.run({ user_id, date, keyboard: kb, mouse: ms })
+      const row = stmts.getDailyInput.get({ user_id, date }) as
+        { keyboard_count: number; mouse_count: number } | undefined
+      triggerAchievementCheck(user_id)
+      return {
+        ok: true,
+        date,
+        keyboard: row?.keyboard_count ?? kb,
+        mouse: row?.mouse_count ?? ms,
+      }
+    },
+  )
+
+  // ── Achievements API ──
+
+  app.get('/api/achievements/catalog', async () => {
+    return stmts.getAchievementCatalog.all()
+  })
+
+  app.get('/api/achievements/user', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    return stmts.getUserAchievements.all({ user_id: userId })
+  })
+
+  app.get('/api/achievements/progress', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+
+    const totals = stmts.getTotalDailyInput.get({ user_id: userId }) as { total_keyboard: number; total_mouse: number }
+    const energy = stmts.getEnergy.get({ user_id: userId }) as { boxes_opened: number } | undefined
+    const items = stmts.countDistinctUserItems.get({ user_id: userId }) as { total: number }
+    const friends = stmts.countFriends.get({ user_id: userId }) as { total: number }
+    const gifts = stmts.countInteractionsSent.get({ user_id: userId, type: 'gift' }) as { total: number }
+    const days = stmts.countActiveDays.get({ user_id: userId }) as { total: number }
+
+    return {
+      total_keyboard: totals.total_keyboard,
+      total_mouse: totals.total_mouse,
+      boxes_opened: energy?.boxes_opened ?? 0,
+      distinct_items: items.total,
+      friend_count: friends.total,
+      gifts_sent: gifts.total,
+      active_days: days.total,
+    }
+  })
+
+  // ── Leaderboard API ──
+
+  app.get('/api/leaderboard/daily', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    const date = (req.query as Record<string, string>).date || todayDateStr()
+    return stmts.getLeaderboardDaily.all({ user_id: userId, date })
+  })
+
+  app.get('/api/leaderboard/weekly', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+
+    const now = new Date()
+    const dayOfWeek = now.getDay() || 7
+    const monday = new Date(now)
+    monday.setDate(now.getDate() - dayOfWeek + 1)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return stmts.getLeaderboardWeekly.all({
+      user_id: userId,
+      start_date: fmt(monday),
+      end_date: fmt(sunday),
+    })
+  })
+
+  // ── Interactions API ──
+
+  const BASE_FISH_LIMIT = 5
+  const BASE_PET_LIMIT = 10
+
+  app.post<{ Body: { from_user: string; to_user: string; type: string; item_id?: string } }>(
+    '/api/interact',
+    async (req, reply) => {
+      const { from_user, to_user, type, item_id } = req.body
+      if (!from_user || !to_user || !type) {
+        return reply.code(400).send({ error: 'from_user, to_user and type required' })
+      }
+      if (!['fish', 'gift', 'pet'].includes(type)) {
+        return reply.code(400).send({ error: 'Invalid interaction type' })
+      }
+
+      const areFriends = stmts.isFriend.get({ user_id: from_user, friend_id: to_user })
+      if (!areFriends) return reply.code(400).send({ error: 'Not friends' })
+
+      const date = todayDateStr()
+      const limits = stmts.getDailyInteractionLimits.get({ user_id: from_user, date }) as
+        { fish_count: number; pet_count: number } | undefined
+
+      const interactBonus = getUserSkillEffect(from_user, 'interact_limit')
+      const fishLimit = BASE_FISH_LIMIT + interactBonus
+      const petLimit = BASE_PET_LIMIT + interactBonus
+
+      if (type === 'fish') {
+        if ((limits?.fish_count ?? 0) >= fishLimit) {
+          return reply.code(429).send({ error: 'Daily fish limit reached', limit: fishLimit })
+        }
+      }
+      if (type === 'pet') {
+        if ((limits?.pet_count ?? 0) >= petLimit) {
+          return reply.code(429).send({ error: 'Daily pet limit reached', limit: petLimit })
+        }
+      }
+
+      const now = Math.floor(Date.now() / 1000)
+
+      if (type === 'gift') {
+        if (!item_id) return reply.code(400).send({ error: 'item_id required for gift' })
+        const owned = stmts.getUserItem.get({ user_id: from_user, item_id }) as { quantity: number } | undefined
+        if (!owned || owned.quantity <= 0) {
+          return reply.code(400).send({ error: 'You do not own this item' })
+        }
+        const giftLuck = getUserSkillEffect(from_user, 'gift_luck')
+        const keepItem = Math.random() * 100 < giftLuck
+        db.transaction(() => {
+          if (!keepItem) {
+            stmts.decrementUserItem.run({ user_id: from_user, item_id, amount: 1 })
+            stmts.deleteUserItem.run({ user_id: from_user, item_id })
+          }
+          stmts.upsertUserItem.run({ user_id: to_user, item_id, obtained_at: now })
+        })()
+      }
+
+      stmts.insertInteraction.run({ from_user, to_user, type, item_id: item_id ?? null, created_at: now })
+
+      if (type === 'fish') {
+        stmts.upsertDailyInteraction.run({ user_id: from_user, date, fish_inc: 1, pet_inc: 0 })
+      } else if (type === 'pet') {
+        stmts.upsertDailyInteraction.run({ user_id: from_user, date, fish_inc: 0, pet_inc: 1 })
+      }
+
+      trackDailyActivity(from_user, 'interact')
+
+      const fromUser = stmts.getUserById.get({ id: from_user }) as { display_name: string } | undefined
+      broadcastToUser(to_user, {
+        type: 'interaction',
+        interaction_type: type,
+        from_user,
+        from_name: fromUser?.display_name ?? 'Someone',
+        item_id: item_id ?? null,
+      })
+
+      triggerAchievementCheck(from_user)
+      return { ok: true, type }
+    },
+  )
+
+  // ── Stats API (for Web dashboard) ──
+
+  app.get('/api/stats/heatmap', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    return stmts.getAllDailyInputForUser.all({ user_id: userId })
+  })
+
+  app.get('/api/stats/input-trend', async (req, reply) => {
+    const userId = resolveUserId(req)
+    if (!userId) return reply.code(400).send({ error: 'user_id required' })
+    const days = parseInt((req.query as Record<string, string>).days ?? '30') || 30
+
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - days + 1)
+
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return stmts.getDailyInputRange.all({
+      user_id: userId,
+      start_date: fmt(start),
+      end_date: fmt(end),
+    })
   })
 
   // ── Item SVG content ──

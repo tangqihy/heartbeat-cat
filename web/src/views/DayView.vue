@@ -7,22 +7,30 @@
       <button class="nav-btn" @click="changeDay(1)" :disabled="isToday">›</button>
     </div>
 
-    <!-- Stats bar -->
+    <!-- Stats bar（不含锁屏） -->
     <div class="stats" v-if="summary.length">
-      <span class="stat">总计 <b>{{ formatDuration(totalDuration) }}</b></span>
-      <span class="stat">应用 <b>{{ summary.length }}</b> 个</span>
-      <span class="stat">最多 <b>{{ summary[0].app_name }}</b> {{ formatDuration(summary[0].total_duration) }}</span>
+      <span class="stat">总时长 <b>{{ formatDuration(totalDurationNoLock) }}</b> <span class="stat-hint">(不含锁屏)</span></span>
+      <span class="stat">应用 <b>{{ summaryNoLock.length }}</b> 个</span>
+      <span class="stat" v-if="summaryNoLock.length">最多 <b>{{ summaryNoLock[0].app_name }}</b> {{ formatDuration(summaryNoLock[0].total_duration) }}</span>
     </div>
 
     <div class="loading" v-if="loading">加载中…</div>
     <div class="error" v-else-if="error">{{ error }}</div>
 
     <template v-else>
-      <!-- App usage horizontal bars -->
+      <!-- App usage horizontal bars（不含锁屏） -->
       <section class="section">
-        <h2 class="section-title">应用使用时长</h2>
+        <h2 class="section-title">应用使用时长（不含锁屏）</h2>
         <div class="chart-box" :style="{ height: barChartHeight }">
-          <AppUsageBar :items="summary" />
+          <AppUsageBar :items="summaryNoLock" />
+        </div>
+      </section>
+
+      <!-- Word cloud -->
+      <section class="section" v-if="summaryNoLock.length">
+        <h2 class="section-title">应用使用 文字云</h2>
+        <div class="chart-box word-cloud-box">
+          <AppWordCloud :items="summaryNoLock" />
         </div>
       </section>
 
@@ -46,8 +54,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { api, type Device, type UsageSummary, type Session } from '../api/client'
-import { formatDuration } from '../utils/colors'
+import { formatDuration, excludeLockScreen } from '../utils/colors'
 import AppUsageBar from '../components/AppUsageBar.vue'
+import AppWordCloud from '../components/AppWordCloud.vue'
 import TimelineChart from '../components/TimelineChart.vue'
 import InputStats from '../components/InputStats.vue'
 
@@ -74,10 +83,11 @@ const dateLabel = computed(() => {
   return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })
 })
 
-const totalDuration = computed(() => summary.value.reduce((s, r) => s + r.total_duration, 0))
+const summaryNoLock = computed(() => excludeLockScreen(summary.value))
+const totalDurationNoLock = computed(() => summaryNoLock.value.reduce((s, r) => s + r.total_duration, 0))
 
 const barChartHeight = computed(() => {
-  const n = summary.value.length
+  const n = summaryNoLock.value.length
   return `${Math.max(120, Math.min(n * 36 + 32, 480))}px`
 })
 
@@ -149,6 +159,8 @@ watch([cursor, () => props.deviceId], load)
   color: #aaa;
 }
 .stat b { color: #eee; }
+.stat-hint { font-size: 11px; color: #666; }
+.word-cloud-box { min-height: 380px; }
 
 .loading { color: #666; text-align: center; padding: 40px; }
 .error { color: #ef5350; text-align: center; padding: 40px; }

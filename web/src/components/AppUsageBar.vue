@@ -9,6 +9,7 @@
 import { computed } from 'vue'
 import type { UsageSummary } from '../api/client'
 import { getAppColor, formatDuration } from '../utils/colors'
+import { getAppIconUrl } from '../utils/app-icons'
 
 const props = defineProps<{ items: UsageSummary[] }>()
 
@@ -22,7 +23,8 @@ const option = computed(() => {
       axisPointer: { type: 'shadow' },
       formatter: (params: any[]) => {
         const p = params[0]
-        return `${p.name}<br/><b>${formatDuration(p.value)}</b>`
+        const url = getAppIconUrl(p.name)
+        return `<img src="${url}" width="16" height="16" style="vertical-align:middle;margin-right:4px"/> ${p.name}<br/><b>${formatDuration(p.value)}</b>`
       },
     },
     grid: { left: 8, right: 60, top: 8, bottom: 8, containLabel: true },

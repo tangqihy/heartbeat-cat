@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 34" data-keyboard="true">
+  <!-- Laptop keyboard: thin, low-profile -->
+  <rect x="0" y="2" width="168" height="30" rx="3" fill="#c0c0c0" stroke="#aaa" stroke-width="0.6"/>
+  <rect x="2" y="3.5" width="164" height="27" rx="2" fill="#d4d4d4"/>
+  <!-- Row 1 -->
+  <g fill="#e8e8e8" stroke="#bbb" stroke-width="0.3">
+    <rect x="5" y="5.5" width="10" height="6" rx="1"/><rect x="16.5" y="5.5" width="10" height="6" rx="1"/>
+    <rect x="28" y="5.5" width="10" height="6" rx="1"/><rect x="39.5" y="5.5" width="10" height="6" rx="1"/>
+    <rect x="51" y="5.5" width="10" height="6" rx="1"/><rect x="62.5" y="5.5" width="10" height="6" rx="1"/>
+    <rect x="74" y="5.5" width="10" height="6" rx="1"/><rect x="85.5" y="5.5" width="10" height="6" rx="1"/>
+    <rect x="97" y="5.5" width="10" height="6" rx="1"/><rect x="108.5" y="5.5" width="10" height="6" rx="1"/>
+    <rect x="120" y="5.5" width="10" height="6" rx="1"/><rect x="131.5" y="5.5" width="29" height="6" rx="1"/>
+  </g>
+  <!-- Row 2 -->
+  <g fill="#e8e8e8" stroke="#bbb" stroke-width="0.3">
+    <rect x="5" y="13" width="13" height="6" rx="1"/><rect x="19.5" y="13" width="10" height="6" rx="1"/>
+    <rect x="31" y="13" width="10" height="6" rx="1"/><rect x="42.5" y="13" width="10" height="6" rx="1"/>
+    <rect x="54" y="13" width="10" height="6" rx="1"/><rect x="65.5" y="13" width="10" height="6" rx="1"/>
+    <rect x="77" y="13" width="10" height="6" rx="1"/><rect x="88.5" y="13" width="10" height="6" rx="1"/>
+    <rect x="100" y="13" width="10" height="6" rx="1"/><rect x="111.5" y="13" width="10" height="6" rx="1"/>
+    <rect x="123" y="13" width="37.5" height="6" rx="1"/>
+  </g>
+  <!-- Row 3 + trackpad hint -->
+  <g fill="#e8e8e8" stroke="#bbb" stroke-width="0.3">
+    <rect x="5" y="20.5" width="16" height="6" rx="1"/><rect x="22.5" y="20.5" width="10" height="6" rx="1"/>
+    <rect x="34" y="20.5" width="10" height="6" rx="1"/>
+    <rect x="45.5" y="20.5" width="58" height="6" rx="1"/>
+    <rect x="105" y="20.5" width="10" height="6" rx="1"/><rect x="116.5" y="20.5" width="10" height="6" rx="1"/>
+    <rect x="128" y="20.5" width="32.5" height="6" rx="1"/>
+  </g>
+</svg>

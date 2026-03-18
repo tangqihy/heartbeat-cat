@@ -74,6 +74,11 @@ body {
 .craft-slot.filled {
   border-style: solid; background: #252525;
 }
+.craft-slot.target {
+  border-style: solid;
+  border-color: #4fc3f7;
+  box-shadow: 0 0 0 2px rgba(79,195,247,0.2) inset;
+}
 .craft-slot .slot-count {
   position: absolute; bottom: -2px; right: -2px;
   background: #444; color: #fff; font-size: 8px;
@@ -99,8 +104,142 @@ body {
 .result-rarity { font-size: 13px; margin-top: 4px; text-transform: uppercase; }
 .result-upgraded { font-size: 14px; color: var(--legendary); margin-top: 6px; }
 
+/* Equipped item quick actions */
+.equip-pop {
+  position: fixed;
+  z-index: 1200;
+  min-width: 180px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: rgba(20, 20, 20, 0.98);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+}
+.equip-pop-title { font-size: 12px; color: #ddd; margin-bottom: 8px; }
+.equip-pop-actions { display: flex; gap: 8px; }
+.equip-pop-btn {
+  border: 1px solid #555; background: #2a2a2a; color: #ddd;
+  border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+}
+.equip-pop-btn.danger { border-color: #ef5350; color: #ef5350; }
+
 /* Empty state */
 .empty { text-align: center; color: var(--text2); padding: 40px; font-size: 14px; }
+
+/* Achievement cards */
+.achievement-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px; text-align: center;
+  transition: all 0.15s; min-width: 100px;
+}
+.achievement-card.locked { opacity: 0.5; filter: grayscale(0.8); }
+.achievement-card.unlocked {
+  border-color: var(--legendary);
+  box-shadow: 0 0 12px rgba(255, 213, 79, 0.4);
+}
+.achievement-card .ach-icon { font-size: 28px; margin: 4px 0; }
+.achievement-card .ach-name { font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.achievement-card .ach-desc { font-size: 10px; color: var(--text2); margin-top: 2px; line-height: 1.2; }
+.achievement-card .ach-progress { font-size: 10px; color: var(--legendary); margin-top: 4px; }
+.achievement-card .ach-date { font-size: 9px; color: var(--legendary); margin-top: 2px; }
+
+/* ── Skill tree ── */
+.level-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; padding: 10px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.level-badge-big {
+  font-size: 24px; font-weight: 700; color: var(--legendary);
+  min-width: 60px; text-align: center;
+}
+.level-xp-wrap { flex: 1; }
+.level-xp-bar { height: 8px; border-radius: 4px; background: #2a2a2a; overflow: hidden; margin-top: 4px; }
+.level-xp-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #ffd54f, #ff8f00); transition: width 0.3s; }
+.level-xp-text { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.skill-points-badge {
+  background: rgba(79,195,247,0.15); color: var(--rare); border-radius: 6px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+
+.skill-branch {
+  margin-bottom: 14px; padding: 12px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.skill-branch-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.skill-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; border-bottom: 1px solid #222;
+}
+.skill-row:last-child { border-bottom: none; }
+.skill-info { flex: 1; }
+.skill-name { font-size: 13px; color: var(--text); }
+.skill-desc { font-size: 11px; color: var(--text2); }
+.skill-level-dots {
+  display: flex; gap: 3px; align-items: center;
+}
+.skill-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1.5px solid #555; background: transparent;
+}
+.skill-dot.filled { background: var(--rare); border-color: var(--rare); }
+.skill-up-btn {
+  background: var(--rare); color: #000; border: none; border-radius: 4px;
+  padding: 2px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: inherit;
+}
+.skill-up-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Quests ── */
+.quest-list { display: flex; flex-direction: column; gap: 8px; }
+.quest-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; transition: all 0.15s;
+}
+.quest-card.completed { border-color: #4caf50; }
+.quest-card.claimed { opacity: 0.6; }
+.quest-icon { font-size: 24px; flex-shrink: 0; }
+.quest-info { flex: 1; }
+.quest-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.quest-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.quest-progress-bar { height: 5px; border-radius: 3px; background: #2a2a2a; margin-top: 4px; overflow: hidden; }
+.quest-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4caf50, #81c784); transition: width 0.3s; }
+.quest-progress-text { font-size: 10px; color: var(--text2); margin-top: 2px; }
+.quest-reward { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 2px; }
+.quest-reward-val { font-size: 12px; font-weight: 600; }
+.quest-reward-type { font-size: 9px; color: var(--text2); }
+.quest-claim-btn {
+  background: #4caf50; color: #fff; border: none; border-radius: 4px;
+  padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: inherit;
+}
+.quest-claim-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.quest-section-title {
+  font-size: 14px; font-weight: 600; margin: 12px 0 8px; color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.token-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(206,147,216,0.15); color: var(--epic); border-radius: 6px;
+  padding: 2px 8px; font-size: 12px; font-weight: 600;
+}
+
+/* ── Quest shop ── */
+.shop-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.shop-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.shop-card:hover { border-color: #555; transform: translateY(-2px); }
+.shop-card .shop-icon { font-size: 28px; margin: 4px 0; }
+.shop-card .shop-name { font-size: 12px; color: var(--text); }
+.shop-card .shop-cost { font-size: 11px; color: var(--epic); font-weight: 600; margin-top: 4px; }
+.shop-card .shop-rarity { font-size: 9px; text-transform: uppercase; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -114,16 +253,20 @@ body {
 </div>
 
 <div class="tabs">
-  <button class="tab active" data-tab="inventory">背包</button>
+  <button class="tab active" data-tab="inventory">物品</button>
   <button class="tab" data-tab="catalog">图鉴</button>
-  <button class="tab" data-tab="equipped">穿戴中</button>
+  <button class="tab" data-tab="equipped">穿戴</button>
+  <button class="tab" data-tab="skills">技能树</button>
+  <button class="tab" data-tab="quests">任务</button>
+  <button class="tab" data-tab="shop">商店</button>
+  <button class="tab" data-tab="achievements">成就</button>
 </div>
 
 <div id="content"></div>
 
 <div class="craft-section" id="craftSection">
   <h3>合成工坊</h3>
-  <div class="craft-desc">选择 10 个物品合成 1 个随机物品，有概率提升品质！</div>
+  <div class="craft-desc">点击格子自动按稀有度填满（每种至少保留1个）；再次点击已填格子可移除，再点背包物品手动补位。</div>
   <div class="craft-slots" id="craftSlots"></div>
   <div class="craft-bar">
     <span class="craft-count" id="craftCount">已选: 0 / 10</span>
@@ -136,7 +279,7 @@ const api = window.heartbeatAPI
 
 const rarityColors = { common: '#aaa', rare: '#4fc3f7', epic: '#ce93d8', legendary: '#ffd54f' }
 const categoryIcons = {
-  hat: '🎩', glasses: '👓', scarf: '🧣', accessory: '✨', color: '🎨'
+  hat: '🎩', glasses: '👓', scarf: '🧣', accessory: '✨', color: '🎨', keyboard: '⌨️'
 }
 
 function esc(s) {
@@ -149,27 +292,73 @@ let inventory = []
 let catalog = []
 let equipped = []
 let profile = null
+let achievementCatalog = []
+let unlockedAchievements = []
+let achievementProgress = {}
 let currentTab = 'inventory'
 
-// Craft state: Map<item_id, count>
-let craftSelection = new Map()
+// RPG data
+let levelInfo = null
+let skillTree = null
+let userSkills = []
+let userSkillPoints = 0
+let activeQuests = []
+let userTokens = 0
+let shopItems = []
+
+const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 }
+const CRAFT_SLOT_COUNT = 10
+// Craft state: fixed slots, each slot stores item_id or null
+let craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
+let manualTargetSlot = null
+let equipPopupEl = null
+
+function closeEquipPopup() {
+  if (equipPopupEl) {
+    equipPopupEl.remove()
+    equipPopupEl = null
+  }
+}
 
 async function loadData() {
   try {
-    const [inv, cat, prof] = await Promise.all([
+    const [inv, cat, prof, achCatalog, achUser, achProgress, lvl, tree, skills, quests, shop] = await Promise.all([
       api.bongoGetInventory(),
       api.bongoGetCatalog(),
       api.bongoGetProfile(),
+      api.bongoGetAchievementCatalog(),
+      api.bongoGetAchievements(),
+      api.bongoGetAchievementProgress(),
+      api.bongoGetLevel(),
+      api.bongoGetSkillTree(),
+      api.bongoGetSkills(),
+      api.bongoGetActiveQuests(),
+      api.bongoGetQuestShop(),
     ])
     inventory = inv || []
     catalog = cat || []
+    achievementCatalog = achCatalog || []
+    unlockedAchievements = achUser || []
+    achievementProgress = achProgress || {}
+    levelInfo = lvl || null
+    skillTree = tree || null
+    if (skills) {
+      userSkills = skills.skills || []
+      userSkillPoints = skills.skill_points ?? 0
+    }
+    if (quests) {
+      activeQuests = quests.quests || []
+      userTokens = quests.tokens ?? 0
+    }
+    shopItems = shop || []
     if (prof) {
       profile = prof
       equipped = prof.equipped || []
       document.getElementById('friendCode').textContent = '好友码: ' + (prof.user?.friend_code || '')
       const e = prof.energy || {}
+      const lvlStr = levelInfo ? `Lv.${levelInfo.level}` : ''
       document.getElementById('energyInfo').textContent =
-        `能量: ${e.energy || 0} | 已开: ${e.boxes_opened || 0} 箱`
+        `${lvlStr} | 能量: ${e.energy || 0} | 已开: ${e.boxes_opened || 0} 箱`
     }
   } catch (err) {
     console.warn('load data failed:', err)
@@ -179,10 +368,20 @@ async function loadData() {
 
 function render() {
   const content = document.getElementById('content')
+  const craftSection = document.getElementById('craftSection')
+  // Hide craft section on non-inventory tabs
+  craftSection.style.display = currentTab === 'inventory' ? '' : 'none'
+
   if (currentTab === 'inventory') renderInventory(content)
   else if (currentTab === 'catalog') renderCatalog(content)
-  else renderEquipped(content)
-  renderCraftSlots()
+  else if (currentTab === 'equipped') renderEquipped(content)
+  else if (currentTab === 'skills') renderSkillTree(content)
+  else if (currentTab === 'quests') renderQuests(content)
+  else if (currentTab === 'shop') renderShop(content)
+  else if (currentTab === 'achievements') renderAchievements(content)
+  else renderInventory(content)
+
+  if (currentTab === 'inventory') renderCraftSlots()
 }
 
 function renderInventory(el) {
@@ -195,8 +394,9 @@ function renderInventory(el) {
     const isEquipped = equippedIds.has(item.item_id)
     const color = rarityColors[item.rarity] || '#aaa'
     const icon = categoryIcons[item.category] || '❓'
-    const inCraft = craftSelection.get(item.item_id) || 0
-    const availQty = item.quantity - inCraft
+    const inCraft = getSelectedCount(item.item_id)
+    const reserved = getReservedCount(item.item_id)
+    const availQty = isEquipped ? 0 : Math.max(0, item.quantity - reserved - inCraft)
     return `
       <div class="item-card ${isEquipped ? 'equipped' : ''}"
            data-item-id="${item.item_id}" data-category="${item.category}"
@@ -211,8 +411,7 @@ function renderInventory(el) {
   }).join('') + '</div>'
 
   el.querySelectorAll('.item-card').forEach(card => {
-    card.addEventListener('click', () => onItemClick(card))
-    card.addEventListener('contextmenu', (e) => { e.preventDefault(); onItemRightClick(card) })
+    card.addEventListener('click', (e) => onItemClick(card, e))
   })
 }
 
@@ -235,7 +434,7 @@ function renderCatalog(el) {
 }
 
 function renderEquipped(el) {
-  const slots = ['hat', 'glasses', 'scarf', 'accessory', 'color']
+  const slots = ['hat', 'glasses', 'scarf', 'accessory', 'color', 'keyboard']
   el.innerHTML = '<div class="grid">' + slots.map(slot => {
     const item = equipped.find(e => e.slot === slot)
     const icon = categoryIcons[slot] || '❓'
@@ -269,11 +468,314 @@ function renderEquipped(el) {
   })
 }
 
-// Left click: equip/unequip. Right click: add to craft.
-async function onItemClick(card) {
+const progressFieldMap = {
+  total_keyboard: 'total_keyboard',
+  total_mouse: 'total_mouse',
+  boxes_opened: 'boxes_opened',
+  distinct_items: 'distinct_items',
+  friend_count: 'friend_count',
+  gifts_sent: 'gifts_sent',
+}
+
+function getAchievementProgressText(ach) {
+  let cond
+  try { cond = JSON.parse(ach.condition || '{}') } catch { return '' }
+  const type = cond.type
+  if (progressFieldMap[type] !== undefined) {
+    const current = achievementProgress[progressFieldMap[type]] ?? 0
+    const target = cond.target ?? 0
+    return `${current} / ${target}`
+  }
+  return ''
+}
+
+function renderAchievements(el) {
+  const unlockedMap = new Map(unlockedAchievements.map(u => [u.achievement_id, u]))
+  if (achievementCatalog.length === 0) {
+    el.innerHTML = '<div class="empty">暂无成就数据</div>'
+    return
+  }
+  el.innerHTML = '<div class="grid">' + achievementCatalog.map(ach => {
+    const unlocked = unlockedMap.get(ach.id)
+    let cond = {}
+    try { cond = JSON.parse(ach.condition || '{}') } catch {}
+    const isMilestone = progressFieldMap[cond.type] !== undefined
+    const progressText = isMilestone ? getAchievementProgressText(ach) : ''
+    const statusText = !isMilestone && unlocked ? '已达成' : (!isMilestone && !unlocked ? '未达成' : '')
+    const dateStr = unlocked && unlocked.unlocked_at
+      ? new Date(unlocked.unlocked_at * 1000).toLocaleDateString('zh-CN')
+      : ''
+    return `
+      <div class="achievement-card ${unlocked ? 'unlocked' : 'locked'}">
+        <div class="ach-icon">${ach.icon || '🏆'}</div>
+        <div class="ach-name">${esc(ach.name)}</div>
+        <div class="ach-desc">${esc(ach.description)}</div>
+        ${progressText ? `<div class="ach-progress">${progressText}</div>` : ''}
+        ${statusText ? `<div class="ach-progress">${statusText}</div>` : ''}
+        ${dateStr ? `<div class="ach-date">${dateStr}</div>` : ''}
+      </div>
+    `
+  }).join('') + '</div>'
+}
+
+// ── Skill tree rendering ──
+
+function getSkillLevelFor(skillId) {
+  const s = userSkills.find(s => s.skill_id === skillId)
+  return s?.level ?? 0
+}
+
+function renderSkillTree(el) {
+  if (!skillTree || !levelInfo) {
+    el.innerHTML = '<div class="empty">加载中...</div>'
+    return
+  }
+
+  let html = ''
+  // Level header
+  const xpPct = levelInfo.xp_progress_pct ?? 0
+  html += `
+    <div class="level-header">
+      <div class="level-badge-big">Lv.${levelInfo.level}</div>
+      <div class="level-xp-wrap">
+        <div class="level-xp-bar"><div class="level-xp-fill" style="width:${xpPct}%"></div></div>
+        <div class="level-xp-text">经验: ${levelInfo.experience} / ${levelInfo.xp_to_next || '—'} &nbsp; 总经验: ${levelInfo.total_experience}</div>
+      </div>
+      <div class="skill-points-badge">技能点: ${userSkillPoints}</div>
+    </div>
+  `
+
+  for (const branch of skillTree.branches) {
+    html += `<div class="skill-branch">
+      <div class="skill-branch-title">${branch.icon} ${esc(branch.name)}</div>`
+    for (const skill of branch.skills) {
+      const curLv = getSkillLevelFor(skill.id)
+      const effect = curLv * skill.effect_per_level
+      const maxed = curLv >= skill.max_level
+      const canUp = userSkillPoints > 0 && !maxed
+      const desc = skill.description.replace('{n}', String(effect || skill.effect_per_level))
+      let dots = ''
+      for (let i = 0; i < skill.max_level; i++) {
+        dots += `<div class="skill-dot ${i < curLv ? 'filled' : ''}"></div>`
+      }
+      html += `
+        <div class="skill-row">
+          <div class="skill-info">
+            <div class="skill-name">${esc(skill.name)} <span style="color:var(--text2);font-size:11px">Lv.${curLv}/${skill.max_level}</span></div>
+            <div class="skill-desc">${esc(desc)}</div>
+          </div>
+          <div class="skill-level-dots">${dots}</div>
+          <button class="skill-up-btn" data-skill-id="${skill.id}" ${canUp ? '' : 'disabled'}>+</button>
+        </div>
+      `
+    }
+    html += '</div>'
+  }
+
+  el.innerHTML = html
+
+  el.querySelectorAll('.skill-up-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const skillId = btn.dataset.skillId
+      try {
+        const result = await api.bongoUpgradeSkill(skillId)
+        if (result && result.ok) {
+          const s = userSkills.find(s => s.skill_id === skillId)
+          if (s) s.level = result.new_level
+          else userSkills.push({ skill_id: skillId, level: result.new_level })
+          userSkillPoints = result.remaining_points
+          // Refresh level info
+          const lvl = await api.bongoGetLevel()
+          if (lvl) levelInfo = lvl
+          render()
+        }
+      } catch (err) {
+        console.warn('skill upgrade failed:', err)
+      }
+    })
+  })
+}
+
+// ── Quest rendering ──
+
+function renderQuests(el) {
+  let html = `<div class="quest-section-title">📋 每日任务 <span class="token-badge">🪙 ${userTokens}</span></div>`
+  html += '<div class="quest-list">'
+
+  const dailyQuests = activeQuests.filter(q => q.type === 'daily')
+  const weeklyQuests = activeQuests.filter(q => q.type === 'weekly')
+
+  if (dailyQuests.length === 0 && weeklyQuests.length === 0) {
+    html += '<div class="empty">暂无任务</div>'
+  }
+
+  for (const q of dailyQuests) {
+    html += renderQuestCard(q)
+  }
+  html += '</div>'
+
+  if (weeklyQuests.length > 0) {
+    html += '<div class="quest-section-title">🏅 每周挑战</div><div class="quest-list">'
+    for (const q of weeklyQuests) {
+      html += renderQuestCard(q)
+    }
+    html += '</div>'
+  }
+
+  el.innerHTML = html
+
+  el.querySelectorAll('.quest-claim-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const questId = Number(btn.dataset.questId)
+      try {
+        const result = await api.bongoClaimQuestReward(questId)
+        if (result && result.ok) {
+          userTokens = result.tokens ?? userTokens
+          const q = activeQuests.find(q => q.id === questId)
+          if (q) q.reward_claimed = 1
+          render()
+        }
+      } catch (err) {
+        console.warn('claim failed:', err)
+      }
+    })
+  })
+}
+
+function renderQuestCard(q) {
+  const pct = q.target > 0 ? Math.min(100, (q.progress / q.target) * 100) : 0
+  const done = q.completed || q.progress >= q.target
+  const claimed = !!q.reward_claimed
+  const rewardIcon = q.reward_type === 'token' ? '🪙' : '⚡'
+  return `
+    <div class="quest-card ${done ? 'completed' : ''} ${claimed ? 'claimed' : ''}">
+      <div class="quest-icon">${q.icon || '📋'}</div>
+      <div class="quest-info">
+        <div class="quest-name">${esc(q.name)} <span style="font-size:10px;color:var(--text2)">${q.type === 'weekly' ? '(周)' : ''}</span></div>
+        <div class="quest-desc">${esc(q.description)}</div>
+        <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div>
+        <div class="quest-progress-text">${q.progress} / ${q.target}</div>
+      </div>
+      <div class="quest-reward">
+        <div class="quest-reward-val">${rewardIcon} ${q.reward_amount}</div>
+        <div class="quest-reward-type">${q.reward_type === 'token' ? '代币' : '能量'}</div>
+        ${done && !claimed
+          ? `<button class="quest-claim-btn" data-quest-id="${q.id}">领取</button>`
+          : claimed ? '<span style="font-size:10px;color:#4caf50">已领</span>' : ''}
+      </div>
+    </div>
+  `
+}
+
+// ── Quest shop rendering ──
+
+function renderShop(el) {
+  let html = `<div class="quest-section-title">🏪 任务商店 <span class="token-badge">🪙 ${userTokens}</span></div>`
+  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">用任务代币兑换确定性物品</div>'
+
+  if (shopItems.length === 0) {
+    html += '<div class="empty">商店暂无物品</div>'
+  } else {
+    html += '<div class="shop-grid">'
+    for (const item of shopItems) {
+      const color = rarityColors[item.rarity] || '#aaa'
+      const icon = categoryIcons[item.category] || '❓'
+      const canBuy = userTokens >= item.cost && item.stock !== 0
+      html += `
+        <div class="shop-card" data-shop-id="${item.id}" style="${canBuy ? '' : 'opacity:0.5'}">
+          <div class="rarity-dot" style="background:${color}"></div>
+          <div class="shop-icon">${icon}</div>
+          <div class="shop-name" style="color:${color}">${esc(item.name)}</div>
+          <div class="shop-rarity" style="color:${color}">${item.rarity}</div>
+          <div class="shop-cost">🪙 ${item.cost}</div>
+          ${item.stock >= 0 ? `<div style="font-size:9px;color:var(--text2)">库存: ${item.stock}</div>` : ''}
+        </div>
+      `
+    }
+    html += '</div>'
+  }
+
+  el.innerHTML = html
+
+  el.querySelectorAll('.shop-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const shopId = card.dataset.shopId
+      const item = shopItems.find(s => s.id === shopId)
+      if (!item || userTokens < item.cost) return
+      if (!confirm(`确定用 ${item.cost} 🪙 购买 "${item.name}"？`)) return
+
+      try {
+        const result = await api.bongoBuyShopItem(shopId)
+        if (result && result.ok) {
+          userTokens = result.tokens
+          await loadData()
+        }
+      } catch (err) {
+        console.warn('shop buy failed:', err)
+      }
+    })
+  })
+}
+
+function showEquippedItemPopup(card, itemId, slot) {
+  closeEquipPopup()
+  const item = inventory.find(i => i.item_id === itemId)
+  const rect = card.getBoundingClientRect()
+  const pop = document.createElement('div')
+  pop.className = 'equip-pop'
+  pop.innerHTML = `
+    <div class="equip-pop-title">${esc(item?.name || itemId)} 已装备</div>
+    <div class="equip-pop-actions">
+      <button class="equip-pop-btn danger" data-act="unequip">卸下</button>
+      <button class="equip-pop-btn" data-act="cancel">取消</button>
+    </div>
+  `
+  pop.style.left = Math.min(window.innerWidth - 200, rect.left + rect.width + 8) + 'px'
+  pop.style.top = Math.max(8, rect.top) + 'px'
+  document.body.appendChild(pop)
+  equipPopupEl = pop
+
+  pop.querySelector('[data-act="cancel"]').addEventListener('click', closeEquipPopup)
+  pop.querySelector('[data-act="unequip"]').addEventListener('click', async () => {
+    await api.bongoEquipItem(slot)
+    closeEquipPopup()
+    await loadData()
+  })
+
+  setTimeout(() => {
+    const closeOnOutside = (ev) => {
+      if (equipPopupEl && !equipPopupEl.contains(ev.target)) {
+        closeEquipPopup()
+        document.removeEventListener('mousedown', closeOnOutside, true)
+      }
+    }
+    document.addEventListener('mousedown', closeOnOutside, true)
+  }, 0)
+}
+
+// Left click: equipped item => popup; if target slot selected => fill craft slot; else equip
+async function onItemClick(card, evt) {
+  closeEquipPopup()
   const itemId = card.dataset.itemId
   const category = card.dataset.category
   const slot = category === 'color' ? 'color' : category
+  const isEquipped = equipped.some(e => e.item_id === itemId)
+
+  if (isEquipped) {
+    showEquippedItemPopup(card, itemId, slot)
+    return
+  }
+
+  if (manualTargetSlot !== null) {
+    if (canAddItemToCraft(itemId)) {
+      craftSlots[manualTargetSlot] = itemId
+      const nextEmpty = craftSlots.findIndex(v => !v)
+      manualTargetSlot = nextEmpty >= 0 ? nextEmpty : null
+      render()
+    }
+    return
+  }
+
   try {
     await api.bongoEquipItem(slot, itemId)
     await loadData()
@@ -282,16 +784,75 @@ async function onItemClick(card) {
   }
 }
 
-function onItemRightClick(card) {
-  const itemId = card.dataset.itemId
-  const availQty = parseInt(card.dataset.qty) || 0
-  if (availQty <= 0) return
+function getSelectedCount(itemId) {
+  return craftSlots.reduce((n, id) => n + (id === itemId ? 1 : 0), 0)
+}
 
-  const totalSelected = Array.from(craftSelection.values()).reduce((a, b) => a + b, 0)
-  if (totalSelected >= 10) return
+function getEquippedIdSet() {
+  return new Set(equipped.map(e => e.item_id))
+}
 
-  craftSelection.set(itemId, (craftSelection.get(itemId) || 0) + 1)
-  render()
+function getReservedCount(itemId) {
+  const item = inventory.find(i => i.item_id === itemId)
+  if (!item) return 0
+  // Each type must keep at least one item in inventory
+  return 1
+}
+
+function getCurrentCraftRarity() {
+  for (const id of craftSlots) {
+    if (!id) continue
+    const item = inventory.find(v => v.item_id === id)
+    if (item?.rarity) return item.rarity
+  }
+  return null
+}
+
+function canAddItemToCraft(itemId) {
+  const item = inventory.find(i => i.item_id === itemId)
+  if (!item) return false
+  if (getEquippedIdSet().has(itemId)) return false
+  const curRarity = getCurrentCraftRarity()
+  if (curRarity && item.rarity !== curRarity) return false
+  const selected = getSelectedCount(itemId)
+  const maxSelectable = Math.max(0, item.quantity - getReservedCount(itemId))
+  return selected < maxSelectable
+}
+
+function autoFillCraftSlots() {
+  craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
+  const equippedIds = getEquippedIdSet()
+  const rarities = ['common', 'rare', 'epic', 'legendary']
+
+  let targetRarity = null
+  for (const rarity of rarities) {
+    const total = inventory
+      .filter(i => i.rarity === rarity && !equippedIds.has(i.item_id))
+      .reduce((sum, i) => sum + Math.max(0, i.quantity - getReservedCount(i.item_id)), 0)
+    if (total >= CRAFT_SLOT_COUNT) {
+      targetRarity = rarity
+      break
+    }
+  }
+
+  if (!targetRarity) {
+    manualTargetSlot = 0
+    return
+  }
+
+  const candidates = inventory
+    .filter(i => i.rarity === targetRarity && !equippedIds.has(i.item_id))
+    .sort((a, b) => a.item_id.localeCompare(b.item_id))
+
+  let idx = 0
+  for (const item of candidates) {
+    const maxSelectable = Math.max(0, item.quantity - getReservedCount(item.item_id))
+    for (let k = 0; k < maxSelectable && idx < CRAFT_SLOT_COUNT; k++) {
+      craftSlots[idx++] = item.item_id
+    }
+  }
+  manualTargetSlot = craftSlots.findIndex(v => !v)
+  if (manualTargetSlot < 0) manualTargetSlot = null
 }
 
 function renderCraftSlots() {
@@ -299,29 +860,35 @@ function renderCraftSlots() {
   const countEl = document.getElementById('craftCount')
   const craftBtn = document.getElementById('craftBtn')
 
-  const total = Array.from(craftSelection.values()).reduce((a, b) => a + b, 0)
+  const total = craftSlots.filter(Boolean).length
   countEl.textContent = `已选: ${total} / 10`
   craftBtn.disabled = total < 10
 
   let html = ''
-  for (const [itemId, count] of craftSelection.entries()) {
-    const item = inventory.find(i => i.item_id === itemId)
-    const icon = item ? (categoryIcons[item.category] || '❓') : '❓'
-    for (let i = 0; i < count; i++) {
-      html += `<div class="craft-slot filled" data-remove="${esc(itemId)}" title="${esc(item?.name || itemId)}">${icon}<span class="slot-count">${count > 1 && i === 0 ? 'x' + count : ''}</span></div>`
+  for (let i = 0; i < CRAFT_SLOT_COUNT; i++) {
+    const itemId = craftSlots[i]
+    if (itemId) {
+      const item = inventory.find(v => v.item_id === itemId)
+      const icon = item ? (categoryIcons[item.category] || '❓') : '❓'
+      html += `<div class="craft-slot filled ${manualTargetSlot === i ? 'target' : ''}" data-slot-index="${i}" title="${esc(item?.name || itemId)}">${icon}</div>`
+    } else {
+      html += `<div class="craft-slot ${manualTargetSlot === i ? 'target' : ''}" data-slot-index="${i}">${i + 1}</div>`
     }
-  }
-  for (let i = total; i < 10; i++) {
-    html += `<div class="craft-slot">${i + 1}</div>`
   }
   slotsEl.innerHTML = html
 
-  slotsEl.querySelectorAll('[data-remove]').forEach(slot => {
+  slotsEl.querySelectorAll('[data-slot-index]').forEach(slot => {
     slot.addEventListener('click', () => {
-      const id = slot.dataset.remove
-      const cur = craftSelection.get(id) || 0
-      if (cur <= 1) craftSelection.delete(id)
-      else craftSelection.set(id, cur - 1)
+      const idx = Number(slot.dataset.slotIndex)
+      if (Number.isNaN(idx)) return
+      if (craftSlots[idx]) {
+        craftSlots[idx] = null
+        manualTargetSlot = idx
+      } else {
+        const selected = craftSlots.filter(Boolean).length
+        if (selected === 0) autoFillCraftSlots()
+        else manualTargetSlot = idx
+      }
       render()
     })
   })
@@ -329,14 +896,20 @@ function renderCraftSlots() {
 
 // Craft button handler
 document.getElementById('craftBtn').addEventListener('click', async () => {
-  const items = Array.from(craftSelection.entries()).map(([item_id, count]) => ({ item_id, count }))
+  const map = new Map()
+  for (const id of craftSlots) {
+    if (!id) continue
+    map.set(id, (map.get(id) || 0) + 1)
+  }
+  const items = Array.from(map.entries()).map(([item_id, count]) => ({ item_id, count }))
   const total = items.reduce((a, b) => a + b.count, 0)
   if (total < 10) return
 
   try {
     const result = await api.bongoCraft(items)
     if (result && result.ok) {
-      craftSelection.clear()
+      craftSlots = Array(CRAFT_SLOT_COUNT).fill(null)
+      manualTargetSlot = null
       showCraftResult(result)
       await loadData()
     }

@@ -1,0 +1,12 @@
+[
+  { "id": "shop-hat-party",     "item_id": "hat-party",       "cost": 5,  "stock": -1 },
+  { "id": "shop-glasses-round", "item_id": "glasses-round",   "cost": 5,  "stock": -1 },
+  { "id": "shop-scarf-bowtie",  "item_id": "scarf-bowtie",    "cost": 15, "stock": -1 },
+  { "id": "shop-hat-cat-ears",  "item_id": "hat-cat-ears",    "cost": 15, "stock": -1 },
+  { "id": "shop-color-orange",  "item_id": "color-orange",    "cost": 20, "stock": -1 },
+  { "id": "shop-acc-wings",     "item_id": "acc-wings",       "cost": 40, "stock": -1 },
+  { "id": "shop-color-calico",  "item_id": "color-calico",    "cost": 40, "stock": -1 },
+  { "id": "shop-hat-crown",     "item_id": "hat-crown",       "cost": 80, "stock": -1 },
+  { "id": "shop-glasses-star",  "item_id": "glasses-star",    "cost": 80, "stock": -1 },
+  { "id": "shop-color-pink",    "item_id": "color-pink",      "cost": 100,"stock": -1 }
+]

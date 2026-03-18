@@ -3,10 +3,10 @@ import path from 'path'
 import { loadConfig, saveConfig, getConfig } from './config-store'
 import { createTray } from './tray'
 import { startHeartbeatLoop, stopHeartbeatLoop, restartHeartbeatLoop } from './heartbeat-loop'
-import { startInputHook, stopInputHook, setInputCallback } from './input'
+import { startInputHook, stopInputHook, setInputCallback, resetInputCounts } from './input'
 import { initLockDetection } from './window-tracker'
 import * as bongoApi from './bongo-api'
-import { setBongoCatWindowRef, pushEnergyUpdate, pushEquipUpdate } from './energy-push'
+import { setBongoCatWindowRef, pushEnergyUpdate, pushEquipUpdate, fetchAndPushDailyInput, pushLevelUpdate } from './energy-push'
 import { connectWs, disconnectWs, setWsBongoCatRef, sendWsInputEvent, sendWsEquipChange } from './ws-client'
 
 let configWindow:   BrowserWindow | null = null
@@ -150,9 +150,16 @@ app.whenReady().then(async () => {
   ipcMain.handle('bongo-open-box', async () => {
     const cfg = getConfig()
     if (!cfg.userId) return null
-    const result = await bongoApi.openBox(cfg.userId)
-    pushEnergyUpdate()
-    return result
+    try {
+      const result = await bongoApi.openBox(cfg.userId)
+      pushEnergyUpdate()
+      return result
+    } catch (err) {
+      const msg = (err as Error).message ?? ''
+      const match = msg.match(/"next_open_in"\s*:\s*(\d+)/)
+      if (match) return { ok: false, next_open_in: Number(match[1]) }
+      return { ok: false, error: msg }
+    }
   })
 
   ipcMain.handle('bongo-get-catalog', async () => {
@@ -202,6 +209,103 @@ app.whenReady().then(async () => {
     const result = await bongoApi.craftItems(cfg.userId, items)
     pushEnergyUpdate()
     return result
+  })
+
+  // IPC: Achievements
+  ipcMain.handle('bongo-get-achievement-catalog', async () => {
+    return bongoApi.getAchievementCatalog()
+  })
+
+  ipcMain.handle('bongo-get-achievements', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return []
+    return bongoApi.getUserAchievements(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-get-achievement-progress', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getAchievementProgress(cfg.userId)
+  })
+
+  // IPC: Leaderboard
+  ipcMain.handle('bongo-get-leaderboard-daily', async (_e, date?: string) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return []
+    return bongoApi.getLeaderboardDaily(cfg.userId, date)
+  })
+
+  ipcMain.handle('bongo-get-leaderboard-weekly', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return []
+    return bongoApi.getLeaderboardWeekly(cfg.userId)
+  })
+
+  // IPC: Interactions
+  ipcMain.handle('bongo-send-interaction', async (_e, toUser: string, type: string, itemId?: string) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.sendInteraction(cfg.userId, toUser, type, itemId)
+  })
+
+  // IPC: RPG Level & Skills
+  ipcMain.handle('bongo-get-level', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getUserLevel(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-get-skill-tree', async () => {
+    return bongoApi.getSkillTree()
+  })
+
+  ipcMain.handle('bongo-get-skills', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getUserSkills(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-upgrade-skill', async (_e, skillId: string) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.upgradeSkill(cfg.userId, skillId)
+  })
+
+  // IPC: RPG Quests
+  ipcMain.handle('bongo-get-active-quests', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getActiveQuests(cfg.userId)
+  })
+
+  ipcMain.handle('bongo-claim-quest-reward', async (_e, questId: number) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.claimQuestReward(cfg.userId, questId)
+  })
+
+  // IPC: Quest Shop
+  ipcMain.handle('bongo-get-quest-shop', async () => {
+    return bongoApi.getQuestShop()
+  })
+
+  ipcMain.handle('bongo-buy-shop-item', async (_e, shopItemId: string) => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.buyShopItem(cfg.userId, shopItemId)
+  })
+
+  ipcMain.handle('bongo-get-tokens', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getUserTokens(cfg.userId)
+  })
+
+  // IPC: Daily input stats
+  ipcMain.handle('bongo-get-daily-input', async () => {
+    const cfg = getConfig()
+    if (!cfg.userId) return null
+    return bongoApi.getDailyInput(cfg.userId)
   })
 
   // IPC: Friends
@@ -265,11 +369,27 @@ app.whenReady().then(async () => {
   // Connect WebSocket for real-time multiplayer
   connectWs()
 
-  // Push initial energy and equipment state
+  // Push initial energy, equipment, daily input, and level state
   setTimeout(() => {
     pushEnergyUpdate().catch(() => {})
     pushEquipUpdate().catch(() => {})
+    fetchAndPushDailyInput().catch(() => {})
+    pushLevelUpdate().catch(() => {})
   }, 2000)
+
+  // Midnight reset: clear local counters so today starts fresh
+  function scheduleMidnightReset(): void {
+    const now = new Date()
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1)
+    const msUntilMidnight = tomorrow.getTime() - now.getTime()
+    setTimeout(() => {
+      resetInputCounts()
+      fetchAndPushDailyInput().catch(() => {})
+      console.log('[heartbeat] midnight reset — new day started')
+      scheduleMidnightReset()
+    }, msUntilMidnight)
+  }
+  scheduleMidnightReset()
 
   console.log(`[heartbeat] ${cfg.deviceName} (${cfg.deviceId}) → ${cfg.serverUrl}`)
 })

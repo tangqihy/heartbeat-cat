@@ -21,8 +21,8 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 .cat-svg.bounce { transform: translateY(3px); }
 
 .paw-left, .paw-right { transition: transform 0.07s ease-out; transform-origin: center bottom; }
-.paw-left.tap  { transform: translateY(8px) scaleY(0.6) rotate(-5deg); }
-.paw-right.tap { transform: translateY(8px) scaleY(0.6) rotate(5deg); }
+.paw-left.tap  { transform: translateY(6px) scaleY(0.65) rotate(-4deg); }
+.paw-right.tap { transform: translateY(6px) scaleY(0.65) rotate(4deg); }
 
 .ear-left, .ear-right { transition: transform 0.1s ease-out; transform-origin: 50% 100%; }
 .ear-left.wiggle  { transform: rotate(-18deg) translateY(-3px); }
@@ -50,14 +50,53 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 .energy-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4fc3f7, #7c4dff); transition: width 0.4s ease; width: 0%; }
 .energy-label { font-size: 9px; color: rgba(255,255,255,0.5); text-align: right; }
 
+.box-area {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 0;
+  position: relative; -webkit-app-region: no-drag;
+}
 .box-btn {
-  flex-shrink: 0; width: 24px; height: 24px; border: none; background: none;
+  width: 26px; height: 26px; border: none; background: none;
   cursor: pointer; font-size: 18px; filter: grayscale(1) opacity(0.3);
   transition: all 0.3s; padding: 0;
-  -webkit-app-region: no-drag;
+  -webkit-app-region: no-drag; position: relative;
 }
 .box-btn.ready { filter: none; animation: boxPulse 1s infinite; }
+.box-btn.cooldown { filter: grayscale(0.5) opacity(0.5); cursor: default; }
 @keyframes boxPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+.box-badge {
+  position: absolute; top: -4px; right: -6px;
+  background: #ff5252; color: #fff; font-size: 8px; font-weight: 700;
+  min-width: 13px; height: 13px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 2px; line-height: 1; pointer-events: none; font-family: 'Segoe UI', sans-serif;
+}
+.box-cooldown-label {
+  font-size: 8px; color: rgba(255,255,255,0.5); font-family: 'Segoe UI', sans-serif;
+  white-space: nowrap; margin-top: -1px;
+}
+
+/* Level badge */
+.level-row {
+  display: flex; align-items: center; gap: 4px; width: 220px; margin-top: 2px;
+  font-family: 'Segoe UI', sans-serif;
+  -webkit-app-region: no-drag; cursor: default;
+}
+.level-badge {
+  font-size: 10px; font-weight: 700;
+  color: #ffd54f; background: rgba(255,213,79,0.15);
+  padding: 1px 5px; border-radius: 4px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.xp-bar-bg { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.xp-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #ffd54f, #ff8f00); transition: width 0.4s ease; width: 0%; }
+.xp-label { font-size: 8px; color: rgba(255,255,255,0.4); white-space: nowrap; flex-shrink: 0; }
+
+@keyframes levelUpFlash {
+  0% { text-shadow: 0 0 8px #ffd54f, 0 0 16px #ff8f00; transform: scale(1.3); }
+  100% { text-shadow: none; transform: scale(1); }
+}
+.level-badge.flash { animation: levelUpFlash 0.8s ease-out; }
 
 /* Friend cat mini */
 .friend-cat-wrap {
@@ -73,6 +112,46 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 }
 .friend-cat-svg { transition: transform 0.08s ease-out; }
 .friend-cat-svg.bounce { transform: translateY(2px); }
+
+/* ── Animation state machine ── */
+@keyframes blink { 0%,90%,100% { ry: 7; } 95% { ry: 1; } }
+@keyframes tailWag { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes zzzFloat { 0% { opacity:0; transform:translate(0,0) scale(0.7); } 30% { opacity:0.8; } 100% { opacity:0; transform:translate(8,-18) scale(1.1); } }
+@keyframes sweatDrop { 0% { opacity:0; transform:translateY(0); } 30% { opacity:0.7; } 100% { opacity:0; transform:translateY(6px); } }
+@keyframes starBurst { 0% { opacity:1; transform:scale(0.3); } 50% { opacity:1; transform:scale(1.2); } 100% { opacity:0; transform:scale(0.5) translateY(-15px); } }
+@keyframes achieveBanner { 0% { transform:translateY(-40px); opacity:0; } 15% { transform:translateY(0); opacity:1; } 85% { transform:translateY(0); opacity:1; } 100% { transform:translateY(-40px); opacity:0; } }
+@keyframes fishFly { 0% { transform:translate(-60px,20px) rotate(-30deg); opacity:0; } 20% { opacity:1; } 80% { opacity:1; } 100% { transform:translate(20px,-10px) rotate(10deg); opacity:0; } }
+@keyframes heartFloat { 0% { opacity:0; transform:scale(0.3) translateY(0); } 30% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(0.8) translateY(-25px); } }
+
+#tail { transform-origin: 150px 100px; animation: tailWag 2s ease-in-out infinite; }
+.cat-state-sleepy #eyeL, .cat-state-sleepy #eyeR { ry: 3 !important; }
+.cat-state-sleeping #eyeL, .cat-state-sleeping #eyeR { ry: 1.2 !important; }
+.cat-state-sleepy .cat-svg, .cat-state-sleeping .cat-svg { transform: translateY(2px); }
+.cat-state-fast #eyeL, .cat-state-fast #eyeR { ry: 8 !important; rx: 6 !important; }
+
+.zzz-bubble { position:absolute; top:8px; right:20px; font-size:14px; pointer-events:none; display:none; }
+.cat-state-sleepy .zzz-bubble, .cat-state-sleeping .zzz-bubble { display:block; }
+.zzz-char { display:inline-block; animation: zzzFloat 2s ease-out infinite; }
+.zzz-char:nth-child(2) { animation-delay:0.6s; font-size:12px; }
+.zzz-char:nth-child(3) { animation-delay:1.2s; font-size:10px; }
+
+.sweat-drop { display:none; }
+.cat-state-fast .sweat-drop { display:block; animation: sweatDrop 0.8s ease-out infinite; }
+
+.achieve-banner {
+  position:fixed; top:4px; left:50%; transform:translateX(-50%);
+  background:linear-gradient(135deg,#ffd54f,#ff8f00); color:#333;
+  padding:4px 14px; border-radius:10px; font:bold 12px 'Segoe UI',sans-serif;
+  white-space:nowrap; z-index:1000; pointer-events:none;
+  animation: achieveBanner 3s ease-in-out forwards;
+  box-shadow:0 2px 10px rgba(255,213,79,0.5);
+  -webkit-app-region:no-drag;
+}
+
+.interaction-anim { position:absolute; pointer-events:none; z-index:900; }
+.fish-anim { font-size:24px; animation: fishFly 1.2s ease-out forwards; top:40%; left:30%; }
+.heart-anim { font-size:18px; animation: heartFloat 1s ease-out forwards; }
+.gift-anim { font-size:24px; animation: starBurst 1s ease-out forwards; top:30%; left:45%; }
 </style>
 </head>
 <body>
@@ -80,7 +159,8 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 <div class="cats-row" id="catsRow">
   <!-- Friend cats will be inserted here dynamically -->
   <div class="cat-wrapper" id="catWrapper">
-    <svg class="cat-svg" id="catSvg" width="220" height="190" viewBox="-20 -10 220 170">
+    <div class="zzz-bubble"><span class="zzz-char">Z</span><span class="zzz-char">z</span><span class="zzz-char">z</span></div>
+    <svg class="cat-svg" id="catSvg" width="220" height="200" viewBox="-20 -10 220 175">
       <g class="ear-left" id="earL">
         <polygon points="42,52 26,6 62,36" fill="#f5f5f5" stroke="#ddd" stroke-width="1.2"/>
         <polygon points="45,46 33,18 56,38" fill="#ffb5b5"/>
@@ -104,17 +184,70 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
       <line x1="128" y1="76" x2="158" y2="72" stroke="#ddd" stroke-width="0.9"/>
       <line x1="128" y1="80" x2="160" y2="82" stroke="#ddd" stroke-width="0.9"/>
       <line x1="128" y1="84" x2="156" y2="92" stroke="#ddd" stroke-width="0.9"/>
+      <!-- Tail -->
+      <path id="tail" d="M148,95 Q168,90 172,70 Q176,50 165,42" fill="none" stroke="#f5f5f5" stroke-width="6" stroke-linecap="round"/>
+      <!-- Sweat drop (visible in fast-typing state) -->
+      <ellipse class="sweat-drop" cx="148" cy="52" rx="2.5" ry="3.5" fill="#87ceeb" opacity="0.7"/>
       <g id="equipLayer"></g>
-      <rect x="10" y="122" width="160" height="26" rx="5" fill="#e8e8e8" stroke="#ddd" stroke-width="1"/>
-      <g class="paw-left" id="pawL" transform="translate(48,118)">
-        <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+      <!-- Keyboard -->
+      <g id="keyboard">
+        <rect x="6" y="119" width="168" height="34" rx="5" fill="#2d2d2d" stroke="#3d3d3d" stroke-width="0.8"/>
+        <rect x="9" y="121" width="162" height="30" rx="4" fill="#333"/>
+        <!-- Row 1: 12 keys -->
+        <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+          <rect x="13" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="25" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="37" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="49" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="61" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="73" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="85" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="97" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="109" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="121" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="133" y="123" width="10" height="6.5" rx="1.2"/>
+          <rect x="145" y="123" width="18" height="6.5" rx="1.2"/>
+        </g>
+        <!-- Row 2: 11 keys (offset) -->
+        <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+          <rect x="13" y="131.5" width="14" height="6.5" rx="1.2"/>
+          <rect x="29" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="41" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="53" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="65" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="77" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="89" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="101" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="113" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="125" y="131.5" width="10" height="6.5" rx="1.2"/>
+          <rect x="137" y="131.5" width="26" height="6.5" rx="1.2"/>
+        </g>
+        <!-- Row 3: shift + keys + space + keys -->
+        <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+          <rect x="13" y="140" width="18" height="6.5" rx="1.2"/>
+          <rect x="33" y="140" width="10" height="6.5" rx="1.2"/>
+          <rect x="45" y="140" width="10" height="6.5" rx="1.2"/>
+          <rect x="57" y="140" width="56" height="6.5" rx="1.2"/>
+          <rect x="115" y="140" width="10" height="6.5" rx="1.2"/>
+          <rect x="127" y="140" width="10" height="6.5" rx="1.2"/>
+          <rect x="139" y="140" width="24" height="6.5" rx="1.2"/>
+        </g>
+        <!-- Subtle key shine on a few keys -->
+        <g fill="rgba(255,255,255,0.06)">
+          <rect x="49" y="123" width="10" height="3" rx="1"/>
+          <rect x="77" y="131.5" width="10" height="3" rx="1"/>
+          <rect x="57" y="140" width="56" height="3" rx="1"/>
+        </g>
+      </g>
+      <g class="paw-left" id="pawL" transform="translate(48,126)">
+        <ellipse cx="0" cy="0" rx="18" ry="11" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
         <circle cx="-7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
         <circle cx="0" cy="-5" r="3" fill="#ffcccc" opacity="0.5"/>
         <circle cx="7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
         <ellipse cx="0" cy="3" rx="6" ry="4" fill="#ffcccc" opacity="0.4"/>
       </g>
-      <g class="paw-right" id="pawR" transform="translate(132,118)">
-        <ellipse cx="0" cy="0" rx="18" ry="12" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+      <g class="paw-right" id="pawR" transform="translate(132,126)">
+        <ellipse cx="0" cy="0" rx="18" ry="11" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
         <circle cx="-7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
         <circle cx="0" cy="-5" r="3" fill="#ffcccc" opacity="0.5"/>
         <circle cx="7" cy="-3" r="3" fill="#ffcccc" opacity="0.5"/>
@@ -133,12 +266,22 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
     <div class="energy-bar-bg"><div class="energy-bar-fill" id="energyFill"></div></div>
     <div class="energy-label" id="energyLabel">0 / 1000</div>
   </div>
-  <button class="box-btn" id="boxBtn" title="开宝箱">🎁</button>
+  <div class="box-area">
+    <button class="box-btn" id="boxBtn" title="开宝箱">🎁</button>
+    <span class="box-badge" id="boxBadge" style="display:none">0</span>
+    <span class="box-cooldown-label" id="boxCooldown"></span>
+  </div>
+</div>
+<div class="level-row">
+  <span class="level-badge" id="levelBadge">Lv.1</span>
+  <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill"></div></div>
+  <span class="xp-label" id="xpLabel">0/100</span>
 </div>
 
 <script>
 const api = window.heartbeatAPI
 let kbTotal = 0, msTotal = 0, nextPaw = 'left'
+let dailyKb = 0, dailyMs = 0
 
 const catSvg  = document.getElementById('catSvg')
 const pawL    = document.getElementById('pawL')
@@ -179,38 +322,133 @@ function fmt(n) {
   return String(n)
 }
 
-api.onInputEvent((data) => {
-  if (data.type === 'keyboard') {
-    kbTotal++; kbEl.textContent = fmt(kbTotal)
-    tapPaw(nextPaw); nextPaw = nextPaw === 'left' ? 'right' : 'left'
-  } else {
-    msTotal++; msEl.textContent = fmt(msTotal)
-    mouseReact()
-  }
+api.onDailyInputUpdate((data) => {
+  dailyKb = data.keyboard
+  dailyMs = data.mouse
+  kbTotal = 0
+  msTotal = 0
+  kbEl.textContent = fmt(dailyKb)
+  msEl.textContent = fmt(dailyMs)
 })
 
-/* ── Energy ── */
-let boxesAvailable = 0
-api.onEnergyUpdate((data) => {
-  const pct = Math.min(100, (data.progress / data.energy_per_box) * 100)
+/* ── Energy (optimistic client-first) ── */
+let serverEnergy = 0
+let serverProgress = 0
+let energyPerBox = 1000
+let pendingEnergy = 0
+
+let openAllowance = 0
+let energyBoxes = 0
+let nextOpenIn = 0
+let cooldownTickTimer = null
+
+const boxBadge = document.getElementById('boxBadge')
+const boxCooldown = document.getElementById('boxCooldown')
+
+function effectiveProgress() { return serverProgress + pendingEnergy }
+function effectiveEnergyBoxes() { return Math.floor((serverEnergy + pendingEnergy) / energyPerBox) }
+function effectiveAvailable() { return Math.min(effectiveEnergyBoxes(), openAllowance) }
+
+function updateEnergyUI() {
+  const prog = effectiveProgress() % energyPerBox
+  const pct = Math.min(100, (prog / energyPerBox) * 100)
   energyFill.style.width = pct + '%'
-  energyLabel.textContent = data.progress + ' / ' + data.energy_per_box
-  boxesAvailable = data.available_boxes
-  if (boxesAvailable > 0) { boxBtn.classList.add('ready'); boxBtn.title = `开宝箱 (${boxesAvailable})` }
-  else { boxBtn.classList.remove('ready'); boxBtn.title = '能量不足' }
+  energyLabel.textContent = prog + ' / ' + energyPerBox
+
+  const canOpen = effectiveAvailable()
+  const eBoxes = effectiveEnergyBoxes()
+
+  boxBtn.classList.remove('ready', 'cooldown')
+  if (canOpen > 0) {
+    boxBtn.classList.add('ready')
+    boxBtn.title = `开宝箱 (${canOpen})`
+  } else if (eBoxes > 0 && openAllowance <= 0) {
+    boxBtn.classList.add('cooldown')
+    boxBtn.title = '冷却中...'
+  } else {
+    boxBtn.title = '能量不足'
+  }
+
+  if (eBoxes > 0) {
+    boxBadge.textContent = String(eBoxes)
+    boxBadge.style.display = 'flex'
+    boxBadge.style.background = canOpen > 0 ? '#4caf50' : '#ff9800'
+  } else {
+    boxBadge.style.display = 'none'
+  }
+}
+
+function startCooldownTick() {
+  if (cooldownTickTimer) return
+  cooldownTickTimer = setInterval(() => {
+    if (nextOpenIn > 0) {
+      nextOpenIn--
+      const m = Math.floor(nextOpenIn / 60)
+      const s = nextOpenIn % 60
+      boxCooldown.textContent = `${m}:${String(s).padStart(2,'0')}`
+      if (nextOpenIn <= 0) {
+        openAllowance++
+        boxCooldown.textContent = ''
+        updateEnergyUI()
+        clearInterval(cooldownTickTimer)
+        cooldownTickTimer = null
+      }
+    } else {
+      boxCooldown.textContent = ''
+      clearInterval(cooldownTickTimer)
+      cooldownTickTimer = null
+    }
+  }, 1000)
+}
+
+api.onEnergyUpdate((data) => {
+  serverEnergy = data.energy
+  serverProgress = data.progress
+  energyPerBox = data.energy_per_box
+  energyBoxes = data.energy_boxes ?? Math.floor(data.energy / data.energy_per_box)
+  openAllowance = data.open_allowance ?? data.available_boxes
+  nextOpenIn = data.next_open_in ?? 0
+  pendingEnergy = 0
+  updateEnergyUI()
+  if (nextOpenIn > 0 && openAllowance <= 0) startCooldownTick()
+})
+
+api.onInputEvent((data) => {
+  pendingEnergy++
+  updateEnergyUI()
+
+  if (data.type === 'keyboard') {
+    kbTotal++; kbEl.textContent = fmt(dailyKb + kbTotal)
+    tapPaw(nextPaw); nextPaw = nextPaw === 'left' ? 'right' : 'left'
+    recordKeyInput()
+  } else {
+    msTotal++; msEl.textContent = fmt(dailyMs + msTotal)
+    mouseReact()
+    recordMouseInput()
+  }
 })
 
 boxBtn.addEventListener('click', async (e) => {
   e.stopPropagation()
-  if (boxesAvailable <= 0) return
+  if (effectiveAvailable() <= 0) return
   try {
     const result = await api.bongoOpenBox()
-    if (result && result.ok) showBoxResult(result.item)
+    if (result && result.ok) {
+      showBoxResult(result.item)
+      if (openAllowance > 0) openAllowance--
+      updateEnergyUI()
+    } else if (result && result.next_open_in) {
+      nextOpenIn = result.next_open_in
+      openAllowance = 0
+      updateEnergyUI()
+      startCooldownTick()
+    }
   } catch {}
 })
 
 /* ── Equipment ── */
 const equipLayer = document.getElementById('equipLayer')
+const keyboardEl = document.getElementById('keyboard')
 const headEl = document.querySelector('ellipse[cx="90"][cy="74"]')
 
 async function loadEquipment() {
@@ -220,20 +458,53 @@ async function loadEquipment() {
   } catch {}
 }
 
+const DEFAULT_CAT_COLOR = '#f5f5f5'
+const earLBase = document.querySelector('#earL > polygon')
+const earRBase = document.querySelector('#earR > polygon')
+const pawLBase = document.querySelector('#pawL > ellipse')
+const pawRBase = document.querySelector('#pawR > ellipse')
+const tailEl = document.getElementById('tail')
+
+function applyCatColor(color) {
+  if (headEl) headEl.setAttribute('fill', color)
+  if (earLBase) earLBase.setAttribute('fill', color)
+  if (earRBase) earRBase.setAttribute('fill', color)
+  if (pawLBase) pawLBase.setAttribute('fill', color)
+  if (pawRBase) pawRBase.setAttribute('fill', color)
+  if (tailEl) tailEl.setAttribute('stroke', color)
+}
+
+function resetCatColor() {
+  applyCatColor(DEFAULT_CAT_COLOR)
+}
+
 async function renderEquipment(equipped) {
   equipLayer.innerHTML = ''
+  let hasKeyboard = false
+  resetCatColor()
+
   for (const item of equipped) {
     if (item.slot === 'color' && item.svg_ref) {
       try {
         const svgText = await api.bongoGetItemSvg(item.svg_ref)
         if (svgText) {
           const match = svgText.match(/data-color="([^"]+)"/)
-          if (match && headEl) {
-            const color = match[1]
-            headEl.setAttribute('fill', color)
-            document.querySelectorAll('.ear-left polygon:first-child, .ear-right polygon:first-child').forEach(p => p.setAttribute('fill', color))
-            document.querySelectorAll('.paw-left ellipse:first-child, .paw-right ellipse:first-child').forEach(p => p.setAttribute('fill', color))
-          }
+          if (match) applyCatColor(match[1])
+        }
+      } catch {}
+      continue
+    }
+    if (item.slot === 'keyboard' && item.svg_ref) {
+      try {
+        const svgText = await api.bongoGetItemSvg(item.svg_ref)
+        if (svgText && keyboardEl) {
+          hasKeyboard = true
+          keyboardEl.innerHTML = '<g transform="translate(6,119)">' +
+            svgText
+              .replace(/<\?xml[^?]*\?>/g, '')
+              .replace(/<svg[^>]*>/, '')
+              .replace(/<\/svg>/, '') +
+            '</g>'
         }
       } catch {}
       continue
@@ -251,7 +522,39 @@ async function renderEquipment(equipped) {
       equipLayer.appendChild(g)
     } catch {}
   }
+
+  if (!hasKeyboard && keyboardEl) resetDefaultKeyboard()
 }
+
+function resetDefaultKeyboard() {
+  keyboardEl.innerHTML = `
+    <rect x="6" y="119" width="168" height="34" rx="5" fill="#2d2d2d" stroke="#3d3d3d" stroke-width="0.8"/>
+    <rect x="9" y="121" width="162" height="30" rx="4" fill="#333"/>
+    <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+      <rect x="13" y="123" width="10" height="6.5" rx="1.2"/><rect x="25" y="123" width="10" height="6.5" rx="1.2"/>
+      <rect x="37" y="123" width="10" height="6.5" rx="1.2"/><rect x="49" y="123" width="10" height="6.5" rx="1.2"/>
+      <rect x="61" y="123" width="10" height="6.5" rx="1.2"/><rect x="73" y="123" width="10" height="6.5" rx="1.2"/>
+      <rect x="85" y="123" width="10" height="6.5" rx="1.2"/><rect x="97" y="123" width="10" height="6.5" rx="1.2"/>
+      <rect x="109" y="123" width="10" height="6.5" rx="1.2"/><rect x="121" y="123" width="10" height="6.5" rx="1.2"/>
+      <rect x="133" y="123" width="10" height="6.5" rx="1.2"/><rect x="145" y="123" width="18" height="6.5" rx="1.2"/>
+    </g>
+    <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+      <rect x="13" y="131.5" width="14" height="6.5" rx="1.2"/><rect x="29" y="131.5" width="10" height="6.5" rx="1.2"/>
+      <rect x="41" y="131.5" width="10" height="6.5" rx="1.2"/><rect x="53" y="131.5" width="10" height="6.5" rx="1.2"/>
+      <rect x="65" y="131.5" width="10" height="6.5" rx="1.2"/><rect x="77" y="131.5" width="10" height="6.5" rx="1.2"/>
+      <rect x="89" y="131.5" width="10" height="6.5" rx="1.2"/><rect x="101" y="131.5" width="10" height="6.5" rx="1.2"/>
+      <rect x="113" y="131.5" width="10" height="6.5" rx="1.2"/><rect x="125" y="131.5" width="10" height="6.5" rx="1.2"/>
+      <rect x="137" y="131.5" width="26" height="6.5" rx="1.2"/>
+    </g>
+    <g fill="#4a4a4a" stroke="#555" stroke-width="0.3">
+      <rect x="13" y="140" width="18" height="6.5" rx="1.2"/><rect x="33" y="140" width="10" height="6.5" rx="1.2"/>
+      <rect x="45" y="140" width="10" height="6.5" rx="1.2"/><rect x="57" y="140" width="56" height="6.5" rx="1.2"/>
+      <rect x="115" y="140" width="10" height="6.5" rx="1.2"/><rect x="127" y="140" width="10" height="6.5" rx="1.2"/>
+      <rect x="139" y="140" width="24" height="6.5" rx="1.2"/>
+    </g>
+  `
+}
+
 api.onEquipUpdate((equipped) => renderEquipment(equipped))
 loadEquipment()
 
@@ -362,6 +665,162 @@ function animateFriendCat(friendId, inputType) {
   }
 }
 
+/* ══ Animation State Machine ══ */
+let catState = 'idle'
+let lastInputTime = Date.now()
+let recentKeys = [] // timestamps of recent keystrokes
+const SLEEPY_MS = 30000
+const SLEEPING_MS = 60000
+const IDLE_MS = 5000
+const FAST_THRESHOLD = 5 // keys per second
+
+function setCatState(state) {
+  if (catState === state) return
+  catState = state
+  wrapper.className = 'cat-wrapper cat-state-' + state
+}
+
+function recordKeyInput() {
+  const now = Date.now()
+  lastInputTime = now
+  recentKeys.push(now)
+  recentKeys = recentKeys.filter(t => now - t < 2000)
+  const keysPerSec = recentKeys.length / 2
+  if (keysPerSec >= FAST_THRESHOLD) setCatState('fast')
+  else setCatState('typing')
+}
+
+function recordMouseInput() {
+  lastInputTime = Date.now()
+  if (catState === 'sleepy' || catState === 'sleeping') setCatState('idle')
+}
+
+setInterval(() => {
+  const elapsed = Date.now() - lastInputTime
+  if (catState === 'typing' || catState === 'fast') {
+    if (elapsed > IDLE_MS) setCatState('idle')
+    else if (catState === 'fast') {
+      const now = Date.now()
+      recentKeys = recentKeys.filter(t => now - t < 2000)
+      if (recentKeys.length / 2 < 3) setCatState('typing')
+    }
+  } else if (catState === 'idle') {
+    if (elapsed > SLEEPING_MS) setCatState('sleeping')
+    else if (elapsed > SLEEPY_MS) setCatState('sleepy')
+  } else if (catState === 'sleepy' && elapsed > SLEEPING_MS) {
+    setCatState('sleeping')
+  }
+}, 1000)
+
+// Blink animation (random interval 3-6s)
+function scheduleBlink() {
+  const delay = 3000 + Math.random() * 3000
+  setTimeout(() => {
+    if (catState !== 'sleeping' && catState !== 'sleepy') {
+      eyeL.style.transition = 'ry 0.08s'; eyeR.style.transition = 'ry 0.08s'
+      eyeL.setAttribute('ry', '1'); eyeR.setAttribute('ry', '1')
+      setTimeout(() => {
+        eyeL.setAttribute('ry', '7'); eyeR.setAttribute('ry', '7')
+        eyeL.style.transition = ''; eyeR.style.transition = ''
+      }, 120)
+    }
+    scheduleBlink()
+  }, delay)
+}
+scheduleBlink()
+
+/* ══ Achievement Popup ══ */
+api.onAchievementUnlocked((data) => {
+  const ach = data.achievement
+  if (!ach) return
+  setCatState('celebrate')
+  setTimeout(() => { if (catState === 'celebrate') setCatState('idle') }, 3000)
+
+  // Star particles
+  for (let i = 0; i < 6; i++) {
+    const star = document.createElement('div')
+    star.className = 'interaction-anim'
+    star.textContent = '⭐'
+    star.style.cssText = `position:absolute;top:${20+Math.random()*40}%;left:${20+Math.random()*60}%;font-size:${12+Math.random()*10}px;animation:starBurst ${0.6+Math.random()*0.6}s ease-out forwards;pointer-events:none;z-index:900;`
+    wrapper.appendChild(star)
+    setTimeout(() => star.remove(), 1500)
+  }
+
+  // Banner
+  const banner = document.createElement('div')
+  banner.className = 'achieve-banner'
+  banner.textContent = `${ach.icon} ${ach.name}`
+  document.body.appendChild(banner)
+  setTimeout(() => banner.remove(), 3200)
+})
+
+/* ══ Interaction Animations ══ */
+api.onInteraction((data) => {
+  if (data.interaction_type === 'fish') {
+    const el = document.createElement('div')
+    el.className = 'interaction-anim fish-anim'
+    el.textContent = '🐟'
+    wrapper.appendChild(el)
+    setTimeout(() => el.remove(), 1300)
+  } else if (data.interaction_type === 'pet') {
+    for (let i = 0; i < 3; i++) {
+      const el = document.createElement('div')
+      el.className = 'interaction-anim heart-anim'
+      el.textContent = '❤️'
+      el.style.cssText = `position:absolute;top:${10+i*12}%;left:${30+i*15}%;animation-delay:${i*0.15}s;`
+      wrapper.appendChild(el)
+      setTimeout(() => el.remove(), 1200)
+    }
+  } else if (data.interaction_type === 'gift') {
+    const el = document.createElement('div')
+    el.className = 'interaction-anim gift-anim'
+    el.textContent = '🎁'
+    wrapper.appendChild(el)
+    setTimeout(() => el.remove(), 1100)
+  }
+})
+
+/* ══ Level display ══ */
+const levelBadge = document.getElementById('levelBadge')
+const xpFill = document.getElementById('xpFill')
+const xpLabel = document.getElementById('xpLabel')
+let currentLevel = 1
+
+function updateLevelUI(data) {
+  if (!data) return
+  currentLevel = data.level || 1
+  levelBadge.textContent = 'Lv.' + currentLevel
+  const pct = data.xp_progress_pct ?? 0
+  xpFill.style.width = Math.min(100, pct) + '%'
+  xpLabel.textContent = (data.experience ?? 0) + '/' + (data.xp_to_next ?? 100)
+}
+
+api.onLevelUpdate((data) => updateLevelUI(data))
+
+api.onLevelUp((data) => {
+  currentLevel = data.new_level
+  levelBadge.textContent = 'Lv.' + currentLevel
+  levelBadge.classList.add('flash')
+  setTimeout(() => levelBadge.classList.remove('flash'), 1000)
+
+  const banner = document.createElement('div')
+  banner.className = 'achieve-banner'
+  banner.textContent = `⬆ 升级！Lv.${data.new_level}`
+  if (data.skill_points_gained > 0) {
+    banner.textContent += ` (+${data.skill_points_gained} 技能点)`
+  }
+  document.body.appendChild(banner)
+  setTimeout(() => banner.remove(), 3200)
+})
+
+// Load initial level
+;(async () => {
+  try {
+    const data = await api.bongoGetLevel()
+    if (data) updateLevelUI(data)
+  } catch {}
+})()
+
 /* ── WebSocket message handler ── */
 api.onWsMessage((msg) => {
   switch (msg.type) {
@@ -378,7 +837,14 @@ api.onWsMessage((msg) => {
       animateFriendCat(msg.friend_id, msg.input_type)
       break
     case 'friend_equip':
-      // could reload friend's equipment SVGs here in the future
+      break
+    case 'level_up':
+      if (msg.new_level) {
+        currentLevel = msg.new_level
+        levelBadge.textContent = 'Lv.' + currentLevel
+        levelBadge.classList.add('flash')
+        setTimeout(() => levelBadge.classList.remove('flash'), 1000)
+      }
       break
   }
 })

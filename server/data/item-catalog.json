@@ -31,5 +31,11 @@
   { "id": "color-black",      "name": "黑猫",         "category": "color",     "rarity": "rare",      "svg_ref": "color-black.svg" },
   { "id": "color-calico",     "name": "三花猫",       "category": "color",     "rarity": "epic",      "svg_ref": "color-calico.svg" },
   { "id": "color-gray",       "name": "灰猫",         "category": "color",     "rarity": "common",    "svg_ref": "color-gray.svg" },
-  { "id": "color-pink",       "name": "粉猫",         "category": "color",     "rarity": "legendary", "svg_ref": "color-pink.svg" }
+  { "id": "color-pink",       "name": "粉猫",         "category": "color",     "rarity": "legendary", "svg_ref": "color-pink.svg" },
+
+  { "id": "kb-mechanical",    "name": "机械键盘",     "category": "keyboard",  "rarity": "common",    "svg_ref": "kb-mechanical.svg" },
+  { "id": "kb-retro",         "name": "复古打字机",   "category": "keyboard",  "rarity": "rare",      "svg_ref": "kb-retro.svg" },
+  { "id": "kb-gaming",        "name": "RGB电竞键盘",  "category": "keyboard",  "rarity": "epic",      "svg_ref": "kb-gaming.svg" },
+  { "id": "kb-piano",         "name": "钢琴键盘",     "category": "keyboard",  "rarity": "legendary", "svg_ref": "kb-piano.svg" },
+  { "id": "kb-laptop",        "name": "笔记本键盘",   "category": "keyboard",  "rarity": "common",    "svg_ref": "kb-laptop.svg" }
 ]

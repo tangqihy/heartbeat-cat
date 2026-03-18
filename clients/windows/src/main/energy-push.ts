@@ -38,3 +38,56 @@ export async function pushEquipUpdate(): Promise<void> {
     // server might be down
   }
 }
+
+/**
+ * Push incremental input counts (from current heartbeat tick) to server.
+ * Accepts the pre-reset counts so the heartbeat loop can reset local
+ * counters independently.
+ */
+export async function syncDailyInput(keyboard: number, mouse: number): Promise<void> {
+  const cfg = getConfig()
+  if (!cfg.userId) return
+  if (keyboard <= 0 && mouse <= 0) return
+
+  try {
+    const result = await bongoApi.pushDailyInput(cfg.userId, keyboard, mouse)
+    if (bongoCatWindowRef && !bongoCatWindowRef.isDestroyed()) {
+      bongoCatWindowRef.webContents.send('daily-input-update', {
+        keyboard: result.keyboard,
+        mouse: result.mouse,
+        date: result.date,
+      })
+    }
+  } catch {
+    // will retry next cycle
+  }
+}
+
+export async function fetchAndPushDailyInput(): Promise<void> {
+  const cfg = getConfig()
+  if (!cfg.userId) return
+
+  try {
+    const result = await bongoApi.getDailyInput(cfg.userId)
+    if (bongoCatWindowRef && !bongoCatWindowRef.isDestroyed()) {
+      bongoCatWindowRef.webContents.send('daily-input-update', {
+        keyboard: result.keyboard,
+        mouse: result.mouse,
+        date: result.date,
+      })
+    }
+  } catch {}
+}
+
+export async function pushLevelUpdate(): Promise<void> {
+  const cfg = getConfig()
+  if (!cfg.userId) return
+
+  try {
+    const level = await bongoApi.getUserLevel(cfg.userId)
+    if (bongoCatWindowRef && !bongoCatWindowRef.isDestroyed()) {
+      bongoCatWindowRef.webContents.send('level-update', level)
+    }
+  } catch {}
+}
+

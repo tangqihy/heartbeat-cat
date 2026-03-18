@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 34" data-keyboard="true">
+  <!-- Retro typewriter: rounded keys on a warm body -->
+  <rect x="0" y="0" width="168" height="34" rx="5" fill="#5c3d2e" stroke="#8b6c5c" stroke-width="0.8"/>
+  <rect x="2" y="1.5" width="164" height="30" rx="4" fill="#6b4c3b"/>
+  <!-- Circular typewriter keys -->
+  <g fill="#f5e6d3" stroke="#d4c4b0" stroke-width="0.5">
+    <circle cx="14" cy="8" r="4.5"/><circle cx="26" cy="8" r="4.5"/><circle cx="38" cy="8" r="4.5"/>
+    <circle cx="50" cy="8" r="4.5"/><circle cx="62" cy="8" r="4.5"/><circle cx="74" cy="8" r="4.5"/>
+    <circle cx="86" cy="8" r="4.5"/><circle cx="98" cy="8" r="4.5"/><circle cx="110" cy="8" r="4.5"/>
+    <circle cx="122" cy="8" r="4.5"/><circle cx="134" cy="8" r="4.5"/><circle cx="150" cy="8" r="4.5"/>
+  </g>
+  <g fill="#f5e6d3" stroke="#d4c4b0" stroke-width="0.5">
+    <circle cx="18" cy="18" r="4.5"/><circle cx="30" cy="18" r="4.5"/><circle cx="42" cy="18" r="4.5"/>
+    <circle cx="54" cy="18" r="4.5"/><circle cx="66" cy="18" r="4.5"/><circle cx="78" cy="18" r="4.5"/>
+    <circle cx="90" cy="18" r="4.5"/><circle cx="102" cy="18" r="4.5"/><circle cx="114" cy="18" r="4.5"/>
+    <circle cx="126" cy="18" r="4.5"/><circle cx="142" cy="18" r="4.5"/>
+  </g>
+  <g fill="#f5e6d3" stroke="#d4c4b0" stroke-width="0.5">
+    <circle cx="14" cy="27" r="4.5"/><circle cx="26" cy="27" r="4.5"/>
+    <rect x="36" y="23" width="60" height="8" rx="4" fill="#f5e6d3" stroke="#d4c4b0" stroke-width="0.5"/>
+    <circle cx="102" cy="27" r="4.5"/><circle cx="114" cy="27" r="4.5"/>
+    <rect x="124" y="23" width="34" height="8" rx="4" fill="#f5e6d3" stroke="#d4c4b0" stroke-width="0.5"/>
+  </g>
+</svg>

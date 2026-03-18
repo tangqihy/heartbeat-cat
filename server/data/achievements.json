@@ -1,0 +1,37 @@
+[
+  { "id": "kb-1k",       "name": "初出茅庐",       "description": "累计敲击键盘 1,000 次",           "icon": "⌨️",  "category": "milestone", "condition": "{\"type\":\"total_keyboard\",\"target\":1000}",       "reward_energy": 100 },
+  { "id": "kb-10k",      "name": "键盘侠",         "description": "累计敲击键盘 10,000 次",          "icon": "🔥",  "category": "milestone", "condition": "{\"type\":\"total_keyboard\",\"target\":10000}",      "reward_energy": 500 },
+  { "id": "kb-100k",     "name": "打字机器",       "description": "累计敲击键盘 100,000 次",         "icon": "🤖",  "category": "milestone", "condition": "{\"type\":\"total_keyboard\",\"target\":100000}",     "reward_energy": 2000 },
+  { "id": "kb-1m",       "name": "键盘终结者",     "description": "累计敲击键盘 1,000,000 次",       "icon": "💀",  "category": "milestone", "condition": "{\"type\":\"total_keyboard\",\"target\":1000000}",    "reward_energy": 10000 },
+
+  { "id": "ms-1k",       "name": "鼠标初心者",     "description": "累计点击鼠标 1,000 次",           "icon": "🖱️",  "category": "milestone", "condition": "{\"type\":\"total_mouse\",\"target\":1000}",          "reward_energy": 100 },
+  { "id": "ms-10k",      "name": "点击大师",       "description": "累计点击鼠标 10,000 次",          "icon": "👆",  "category": "milestone", "condition": "{\"type\":\"total_mouse\",\"target\":10000}",         "reward_energy": 500 },
+  { "id": "ms-100k",     "name": "鼠标狂魔",       "description": "累计点击鼠标 100,000 次",         "icon": "⚡",  "category": "milestone", "condition": "{\"type\":\"total_mouse\",\"target\":100000}",        "reward_energy": 2000 },
+
+  { "id": "box-10",      "name": "宝箱猎人",       "description": "累计开启 10 个宝箱",              "icon": "📦",  "category": "milestone", "condition": "{\"type\":\"boxes_opened\",\"target\":10}",           "reward_energy": 200 },
+  { "id": "box-50",      "name": "宝藏收藏家",     "description": "累计开启 50 个宝箱",              "icon": "💎",  "category": "milestone", "condition": "{\"type\":\"boxes_opened\",\"target\":50}",           "reward_energy": 1000 },
+  { "id": "box-100",     "name": "开箱百连",       "description": "累计开启 100 个宝箱",             "icon": "🏆",  "category": "milestone", "condition": "{\"type\":\"boxes_opened\",\"target\":100}",          "reward_energy": 3000 },
+
+  { "id": "items-10",    "name": "小收藏家",       "description": "收集 10 种不同物品",              "icon": "🎒",  "category": "milestone", "condition": "{\"type\":\"distinct_items\",\"target\":10}",         "reward_energy": 300 },
+  { "id": "items-20",    "name": "大收藏家",       "description": "收集 20 种不同物品",              "icon": "🗄️",  "category": "milestone", "condition": "{\"type\":\"distinct_items\",\"target\":20}",         "reward_energy": 800 },
+  { "id": "items-30",    "name": "博物馆馆长",     "description": "收集 30 种不同物品",              "icon": "🏛️",  "category": "milestone", "condition": "{\"type\":\"distinct_items\",\"target\":30}",         "reward_energy": 2000 },
+
+  { "id": "streak-3",    "name": "三日坚持",       "description": "连续活跃 3 天",                   "icon": "📅",  "category": "streak",    "condition": "{\"type\":\"consecutive_days\",\"target\":3}",       "reward_energy": 150 },
+  { "id": "streak-7",    "name": "一周不停",       "description": "连续活跃 7 天",                   "icon": "🔥",  "category": "streak",    "condition": "{\"type\":\"consecutive_days\",\"target\":7}",       "reward_energy": 500 },
+  { "id": "streak-14",   "name": "两周达人",       "description": "连续活跃 14 天",                  "icon": "⭐",  "category": "streak",    "condition": "{\"type\":\"consecutive_days\",\"target\":14}",      "reward_energy": 1000 },
+  { "id": "streak-30",   "name": "月度之星",       "description": "连续活跃 30 天",                  "icon": "🌟",  "category": "streak",    "condition": "{\"type\":\"consecutive_days\",\"target\":30}",      "reward_energy": 3000 },
+
+  { "id": "col-hat",     "name": "帽子达人",       "description": "集齐全部帽子",                    "icon": "🎩",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"hat\"}",       "reward_energy": 1000 },
+  { "id": "col-glasses", "name": "眼镜控",         "description": "集齐全部眼镜",                    "icon": "👓",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"glasses\"}",   "reward_energy": 1000 },
+  { "id": "col-scarf",   "name": "围巾收集者",     "description": "集齐全部围巾",                    "icon": "🧣",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"scarf\"}",     "reward_energy": 1000 },
+  { "id": "col-keyboard","name": "键盘发烧友",     "description": "集齐全部键盘",                    "icon": "⌨️",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"keyboard\"}",  "reward_energy": 1500 },
+  { "id": "col-acc",     "name": "饰品全收",       "description": "集齐全部饰品",                    "icon": "✨",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"accessory\"}", "reward_energy": 1000 },
+  { "id": "col-color",   "name": "变色龙",         "description": "集齐全部猫咪颜色",                "icon": "🎨",  "category": "collection","condition": "{\"type\":\"complete_category\",\"category\":\"color\"}",     "reward_energy": 1500 },
+
+  { "id": "friend-1",    "name": "交到朋友了",     "description": "添加 1 个好友",                   "icon": "🤝",  "category": "social",    "condition": "{\"type\":\"friend_count\",\"target\":1}",            "reward_energy": 100 },
+  { "id": "friend-5",    "name": "社交蝴蝶",       "description": "添加 5 个好友",                   "icon": "🦋",  "category": "social",    "condition": "{\"type\":\"friend_count\",\"target\":5}",            "reward_energy": 500 },
+  { "id": "friend-10",   "name": "人气王",         "description": "添加 10 个好友",                  "icon": "👑",  "category": "social",    "condition": "{\"type\":\"friend_count\",\"target\":10}",           "reward_energy": 1000 },
+
+  { "id": "gift-1",      "name": "慷慨之心",       "description": "送出 1 个礼物",                   "icon": "🎁",  "category": "social",    "condition": "{\"type\":\"gifts_sent\",\"target\":1}",              "reward_energy": 200 },
+  { "id": "gift-10",     "name": "礼物大使",       "description": "送出 10 个礼物",                  "icon": "💝",  "category": "social",    "condition": "{\"type\":\"gifts_sent\",\"target\":10}",             "reward_energy": 1000 }
+]

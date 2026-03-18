@@ -4,7 +4,7 @@ import { getInputCounts, resetInputCounts } from './input'
 import { sendHeartbeat } from './heartbeat'
 import { captureScreen } from './screenshot'
 import { describeScreen } from './ai'
-import { pushEnergyUpdate } from './energy-push'
+import { pushEnergyUpdate, syncDailyInput, pushLevelUpdate } from './energy-push'
 
 let timer: ReturnType<typeof setInterval> | null = null
 let tickCount = 0
@@ -77,6 +77,8 @@ async function tick(): Promise<void> {
 
     if (inputCounts.keyboard > 0 || inputCounts.mouse > 0) {
       pushEnergyUpdate().catch(() => {})
+      syncDailyInput(inputCounts.keyboard, inputCounts.mouse).catch(() => {})
+      pushLevelUpdate().catch(() => {})
     }
   } catch (err) {
     console.warn('[heartbeat] tick failed:', (err as Error).message)

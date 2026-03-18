@@ -74,6 +74,12 @@ function sendMsg(msg: Record<string, unknown>): void {
 function forwardToRenderer(msg: Record<string, unknown>): void {
   if (bongoCatRef && !bongoCatRef.isDestroyed()) {
     bongoCatRef.webContents.send('ws-message', msg)
+    if (msg.type === 'achievement_unlocked') {
+      bongoCatRef.webContents.send('achievement-unlocked', msg)
+    }
+    if (msg.type === 'interaction') {
+      bongoCatRef.webContents.send('interaction-received', msg)
+    }
   }
 }
 

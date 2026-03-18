@@ -6,9 +6,13 @@
         <nav class="tabs">
           <button :class="['tab', { active: view === 'day' }]" @click="view = 'day'">日视图</button>
           <button :class="['tab', { active: view === 'week' }]" @click="view = 'week'">周视图</button>
+          <button :class="['tab', { active: view === 'stats' }]" @click="view = 'stats'">统计</button>
+          <button :class="['tab', { active: view === 'leaderboard' }]" @click="view = 'leaderboard'">排行榜</button>
+          <button :class="['tab', { active: view === 'achievement' }]" @click="view = 'achievement'">成就</button>
         </nav>
       </div>
       <div class="header-right">
+        <input v-model="userId" class="user-id-input" placeholder="User ID" />
         <select v-model="deviceId" class="device-select">
           <option value="all">全部设备</option>
           <option v-for="d in devices" :key="d.id" :value="d.id">{{ d.name }}</option>
@@ -17,8 +21,11 @@
     </header>
 
     <main class="main">
-      <DayView  v-if="view === 'day'"  :device-id="deviceId" />
-      <WeekView v-else                 :device-id="deviceId" />
+      <DayView         v-if="view === 'day'"         :device-id="deviceId" />
+      <WeekView        v-else-if="view === 'week'"  :device-id="deviceId" />
+      <StatsView       v-else-if="view === 'stats'" :user-id="userId" />
+      <LeaderboardView v-else-if="view === 'leaderboard'" :user-id="userId" />
+      <AchievementView v-else-if="view === 'achievement'" :user-id="userId" />
     </main>
   </div>
 </template>
@@ -26,10 +33,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api, type Device } from './api/client'
-import DayView  from './views/DayView.vue'
-import WeekView from './views/WeekView.vue'
+import DayView         from './views/DayView.vue'
+import WeekView        from './views/WeekView.vue'
+import StatsView       from './views/StatsView.vue'
+import LeaderboardView from './views/LeaderboardView.vue'
+import AchievementView from './views/AchievementView.vue'
 
-const view     = ref<'day' | 'week'>('day')
+const view     = ref<'day' | 'week' | 'stats' | 'leaderboard' | 'achievement'>('day')
+const userId   = ref('')
 const deviceId = ref('all')
 const devices  = ref<Device[]>([])
 
@@ -88,6 +99,20 @@ button { font-family: inherit; }
 }
 .tab:hover { background: #242424; color: #ccc; }
 .tab.active { background: #2a2a2a; color: #eee; font-weight: 500; }
+
+.user-id-input {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #ccc;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  width: 120px;
+  margin-right: 8px;
+  outline: none;
+}
+.user-id-input::placeholder { color: #666; }
+.user-id-input:hover { border-color: #555; }
 
 .device-select {
   background: #2a2a2a;

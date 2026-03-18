@@ -1,0 +1,31 @@
+{
+  "branches": [
+    {
+      "id": "efficiency",
+      "name": "效率",
+      "icon": "⚡",
+      "skills": [
+        { "id": "energy_boost", "name": "能量加速", "description": "能量获取 +{n}%", "max_level": 5, "effect_per_level": 5 },
+        { "id": "cooldown_reduce", "name": "冷却缩减", "description": "宝箱冷却 -{n}%", "max_level": 5, "effect_per_level": 8 }
+      ]
+    },
+    {
+      "id": "luck",
+      "name": "幸运",
+      "icon": "🍀",
+      "skills": [
+        { "id": "rare_boost", "name": "稀有提升", "description": "稀有掉落权重 +{n}", "max_level": 5, "effect_per_level": 2 },
+        { "id": "craft_boost", "name": "合成精通", "description": "合成升品率 +{n}%", "max_level": 5, "effect_per_level": 3 }
+      ]
+    },
+    {
+      "id": "social",
+      "name": "社交",
+      "icon": "💬",
+      "skills": [
+        { "id": "interact_limit", "name": "社交达人", "description": "每日互动次数 +{n}", "max_level": 5, "effect_per_level": 2 },
+        { "id": "gift_luck", "name": "赠送幸运", "description": "赠送时 {n}% 概率不消耗", "max_level": 5, "effect_per_level": 5 }
+      ]
+    }
+  ]
+}

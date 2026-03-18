@@ -1,3 +1,15 @@
+/** 客户端上报的锁屏应用名，不计入使用时长统计 */
+export const LOCK_SCREEN_APP_NAME = 'Screen Locked'
+
+export function isLockScreen(appName: string): boolean {
+  return (appName || '').trim().toLowerCase() === LOCK_SCREEN_APP_NAME.toLowerCase()
+}
+
+/** 从使用列表中排除锁屏，返回新数组 */
+export function excludeLockScreen<T extends { app_name: string }>(items: T[]): T[] {
+  return items.filter((r) => !isLockScreen(r.app_name))
+}
+
 // Consistent color palette for app names (ECharts default palette extended)
 const PALETTE = [
   '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',

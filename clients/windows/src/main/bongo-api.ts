@@ -34,8 +34,12 @@ export interface EnergyInfo {
   energy: number
   energy_per_box: number
   available_boxes: number
+  energy_boxes: number
   progress: number
   boxes_opened: number
+  open_allowance: number
+  next_open_in: number
+  allowance_interval: number
 }
 
 export interface CatalogItem {
@@ -158,4 +162,194 @@ export async function removeFriend(userId: string, friendId: string) {
 
 export async function getFriendProfile(friendId: string) {
   return api<FriendProfile>(`/api/friends/profile?friend_id=${friendId}`)
+}
+
+// Daily input stats
+export interface DailyInput {
+  date: string
+  keyboard: number
+  mouse: number
+}
+
+export async function getDailyInput(userId: string, date?: string) {
+  const qs = date ? `&date=${date}` : ''
+  return api<DailyInput>(`/api/user/daily-input?user_id=${userId}${qs}`)
+}
+
+export async function pushDailyInput(userId: string, keyboard: number, mouse: number) {
+  return api<DailyInput & { ok: boolean }>(
+    '/api/user/daily-input', 'POST',
+    { user_id: userId, keyboard, mouse },
+  )
+}
+
+// Achievements
+export interface Achievement {
+  id: string
+  name: string
+  description: string
+  icon: string
+  category: string
+  condition: string
+  reward_energy: number
+}
+
+export interface UserAchievement {
+  achievement_id: string
+  unlocked_at: number
+  name: string
+  description: string
+  icon: string
+  category: string
+  reward_energy: number
+}
+
+export async function getAchievementCatalog() {
+  return api<Achievement[]>('/api/achievements/catalog')
+}
+
+export async function getUserAchievements(userId: string) {
+  return api<UserAchievement[]>(`/api/achievements/user?user_id=${userId}`)
+}
+
+export async function getAchievementProgress(userId: string) {
+  return api<Record<string, number>>(`/api/achievements/progress?user_id=${userId}`)
+}
+
+// Leaderboard
+export interface LeaderboardEntry {
+  user_id: string
+  display_name: string
+  cat_color: string
+  keyboard_count: number
+  mouse_count: number
+}
+
+export async function getLeaderboardDaily(userId: string, date?: string) {
+  const qs = date ? `&date=${date}` : ''
+  return api<LeaderboardEntry[]>(`/api/leaderboard/daily?user_id=${userId}${qs}`)
+}
+
+export async function getLeaderboardWeekly(userId: string) {
+  return api<LeaderboardEntry[]>(`/api/leaderboard/weekly?user_id=${userId}`)
+}
+
+// Interactions
+export async function sendInteraction(fromUser: string, toUser: string, type: string, itemId?: string) {
+  return api<{ ok: boolean; type: string }>(
+    '/api/interact', 'POST',
+    { from_user: fromUser, to_user: toUser, type, item_id: itemId },
+  )
+}
+
+// ── RPG: Level & Skills ──
+
+export interface LevelInfo {
+  level: number
+  experience: number
+  total_experience: number
+  skill_points: number
+  xp_to_next: number
+  xp_progress_pct: number
+}
+
+export interface SkillDef {
+  id: string
+  name: string
+  description: string
+  max_level: number
+  effect_per_level: number
+}
+
+export interface SkillBranch {
+  id: string
+  name: string
+  icon: string
+  skills: SkillDef[]
+}
+
+export interface SkillTreeConfig {
+  branches: SkillBranch[]
+}
+
+export interface UserSkill {
+  skill_id: string
+  level: number
+}
+
+export async function getUserLevel(userId: string) {
+  return api<LevelInfo>(`/api/user/level?user_id=${userId}`)
+}
+
+export async function getSkillTree() {
+  return api<SkillTreeConfig>('/api/skills/tree')
+}
+
+export async function getUserSkills(userId: string) {
+  return api<{ skills: UserSkill[]; skill_points: number }>(`/api/user/skills?user_id=${userId}`)
+}
+
+export async function upgradeSkill(userId: string, skillId: string) {
+  return api<{ ok: boolean; skill_id: string; new_level: number; remaining_points: number }>(
+    '/api/user/skill/upgrade', 'POST',
+    { user_id: userId, skill_id: skillId },
+  )
+}
+
+// ── RPG: Quests ──
+
+export interface QuestInfo {
+  id: number
+  quest_id: string
+  date: string
+  target: number
+  progress: number
+  completed: number
+  reward_claimed: number
+  name: string
+  description: string
+  type: string
+  condition: string
+  reward_type: string
+  reward_amount: number
+  icon: string
+}
+
+export async function getActiveQuests(userId: string) {
+  return api<{ quests: QuestInfo[]; tokens: number }>(`/api/quests/active?user_id=${userId}`)
+}
+
+export async function claimQuestReward(userId: string, questId: number) {
+  return api<{ ok: boolean; reward_type: string; reward_amount: number; tokens: number }>(
+    '/api/quests/claim', 'POST',
+    { user_id: userId, quest_id: questId },
+  )
+}
+
+// ── RPG: Quest Shop ──
+
+export interface ShopItem {
+  id: string
+  item_id: string
+  cost: number
+  stock: number
+  name: string
+  category: string
+  rarity: string
+  svg_ref: string
+}
+
+export async function getQuestShop() {
+  return api<ShopItem[]>('/api/quest/shop')
+}
+
+export async function buyShopItem(userId: string, shopItemId: string) {
+  return api<{ ok: boolean; item: CatalogItem; tokens: number }>(
+    '/api/quest/shop/buy', 'POST',
+    { user_id: userId, shop_item_id: shopItemId },
+  )
+}
+
+export async function getUserTokens(userId: string) {
+  return api<{ tokens: number }>(`/api/user/tokens?user_id=${userId}`)
 }

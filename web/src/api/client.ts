@@ -70,3 +70,42 @@ export const api = {
       ...(deviceId ? { device_id: deviceId } : {}),
     }),
 }
+
+// Achievements
+export async function getAchievementCatalog() {
+  const res = await fetch(`${BASE}/achievements/catalog`)
+  return res.json()
+}
+
+export async function getUserAchievements(userId: string) {
+  const res = await fetch(`${BASE}/achievements/user?user_id=${userId}`)
+  return res.json()
+}
+
+export async function getAchievementProgress(userId: string) {
+  const res = await fetch(`${BASE}/achievements/progress?user_id=${userId}`)
+  return res.json()
+}
+
+// Leaderboard
+export async function getLeaderboardDaily(userId: string, date?: string) {
+  const qs = date ? `&date=${date}` : ''
+  const res = await fetch(`${BASE}/leaderboard/daily?user_id=${userId}${qs}`)
+  return res.json()
+}
+
+export async function getLeaderboardWeekly(userId: string) {
+  const res = await fetch(`${BASE}/leaderboard/weekly?user_id=${userId}`)
+  return res.json()
+}
+
+// Stats
+export async function getHeatmap(userId: string) {
+  const res = await fetch(`${BASE}/stats/heatmap?user_id=${userId}`)
+  return res.json()
+}
+
+export async function getInputTrend(userId: string, days = 30) {
+  const res = await fetch(`${BASE}/stats/input-trend?user_id=${userId}&days=${days}`)
+  return res.json()
+}
