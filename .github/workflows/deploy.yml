@@ -49,6 +49,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -64,18 +65,74 @@ jobs:
     if: github.ref_type == 'tag'
 
     steps:
-      - name: Deploy to cloud
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Volcengine server
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          API_KEY: ${{ secrets.API_KEY }}
           IMAGE_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
         run: |
           if [ -z "$DEPLOY_HOST" ]; then
-            echo "DEPLOY_HOST not configured, skipping deployment"
+            echo "::warning::DEPLOY_HOST not configured, skipping deployment"
             exit 0
           fi
+
+          DEPLOY_USER="${DEPLOY_USER:-root}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key "$DEPLOY_HOST" \
-            "docker pull $IMAGE_TAG && docker compose up -d"
+
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST"
+
+          $SSH_CMD << ENDSSH
+            set -e
+
+            # Login to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Pull new image
+            docker pull $IMAGE_TAG
+
+            # Create app directory if not exists
+            mkdir -p ~/heartbeat-cat
+
+            # Write docker-compose.yml
+            cat > ~/heartbeat-cat/docker-compose.yml << 'COMPOSE'
+          services:
+            heartbeat:
+              image: ${IMAGE_TAG}
+              ports:
+                - "3000:3000"
+              volumes:
+                - heartbeat-data:/data
+              environment:
+                - API_KEY=${API_KEY}
+                - DATABASE_PATH=/data/heartbeat.db
+                - NODE_ENV=production
+              restart: unless-stopped
+
+          volumes:
+            heartbeat-data:
+          COMPOSE
+
+            # Write .env
+            cat > ~/heartbeat-cat/.env << ENV
+          IMAGE_TAG=$IMAGE_TAG
+          API_KEY=$API_KEY
+          ENV
+
+            # Deploy
+            cd ~/heartbeat-cat
+            docker compose up -d
+
+            # Cleanup old images
+            docker image prune -f
+
+            echo "Deployment complete: $IMAGE_TAG"
+          ENDSSH
